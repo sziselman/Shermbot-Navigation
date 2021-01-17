@@ -1,4 +1,5 @@
 <launch>
     <node pkg="turtlebot3_burger" name="turtlebot3_burger" type="turtlebot3_burger"/>
     <arg name="use_rviz" default="true"/>
+    <rosparam command="load" file="$diff_params.yaml"/>
 </launch>
