@@ -1,0 +1,3 @@
+# YAML file that provides a complete parametric description of a differential drive robot
+wheel_radius:
+wheel_base:
