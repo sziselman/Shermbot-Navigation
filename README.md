@@ -2,4 +2,5 @@
 * Sarah Ziselman
 * Winter 2021
 # Package List
-This repository consists of several ROS packages
+This repository consists of several ROS packages:
+* nuturtle_description
