@@ -15,7 +15,7 @@
     <visual>
       <origin xyz="-0.032 0 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://nuturtlebot_description/bases/burger_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://nuturtlebot_description/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="light_black"/>
     </visual>
