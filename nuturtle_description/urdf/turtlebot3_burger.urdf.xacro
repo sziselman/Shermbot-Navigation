@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_burger" xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:include filename="$(find nuturtlebot_description)/urdf/common_properties.xacro"/>
-  <xacro:include filename="$(find nuturtlebot_description)/urdf/turtlebot3_burger.gazebo.xacro"/>
+  <xacro:include filename="$(find nuturtle_description)/urdf/common_properties.xacro"/>
+  <xacro:include filename="$(find nuturtle_description)/urdf/turtlebot3_burger.gazebo.xacro"/>
 
   <link name="base_footprint"/>
 
@@ -15,7 +15,7 @@
     <visual>
       <origin xyz="-0.032 0 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://nuturtlebot_description/burger_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="light_black"/>
     </visual>
@@ -47,7 +47,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://nuturtlebot_description/left_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://nuturtle_description/meshes/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -79,7 +79,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://nuturtlebot_description/right_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://nuturtle_description/meshes/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -141,7 +141,7 @@
     <visual>
       <origin xyz="0 0 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://nuturtlebot_description/lds.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://nuturtle_description/meshes/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
