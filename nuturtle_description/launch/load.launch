@@ -1,5 +1,10 @@
 <launch>
-    <node pkg="turtlebot3_burger" name="turtlebot3_burger" type="turtlebot3_burger"/>
     <arg name="use_rviz" default="true"/>
-    <rosparam command="load" file="$diff_params.yaml"/>
+
+    <rosparam command="load" file="$nuturtle_description/config/diff_params.yaml"/>
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+    <node name="rviz" pkg="rviz" type="rviz" />
+
 </launch>
