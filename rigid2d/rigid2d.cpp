@@ -4,30 +4,32 @@
 
 using namespace std;
 
+
+rigid2d::Transform2D::Transform2D(const rigid2d::Vector2D & trans)
+{
+    double T[3][3] = {1, 0, trans.x, 0, 1, trans.y, 0, 0, 1};
+}
+
+rigid2d::Transform2D::Transform2D(double radians)
+{
+    double T[3][3] = {cos(radians), sin(radians), 0, sin(radians), cos(radians), 0, 0, 0, 1};
+}
+
+rigid2d::Transform2D::Transform2D(const Vector2D & trans, double radians)
+{
+    double T[3][3] = {cos(radians), sin(radians), trans.x, sin(radians), cos(radians), trans.y, 0, 0, 1};
+}
+
+
 int main()
 {
+    rigid2d::Vector2D v;
+    cin >> v;
+    cout << v;
     return 0;
 }
-// }
-// explicit Transform2D::Transform2D(const Vector2D & trans)
-// {
-//     // function to create a transformation that is pure translation
-// }
 
-// explicit Transform2D::Transform2D(double radians)
-// {
-//     // function to create a transformation that is pure rotation
-// }
 
-// Transform2D::Transform2D(const Vector2D & trans, double radians)
-// {
-//     // function to create a transformation with translation and rotation
-// }
-
-// Vector2D Transform2D::operator()(Vector2D v) const
-// {
-//     // apply a transformation to a Vector2D
-// }
 
 // Transform2D Transform2D::inv() const
 // {

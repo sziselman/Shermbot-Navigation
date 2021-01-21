@@ -5,7 +5,9 @@
 
 #include<iosfwd> // contains forward definitions for iostream objects
 #include<cmath>
+#include<iostream>
 
+using namespace std;
 
 namespace rigid2d
 {
@@ -74,7 +76,11 @@ namespace rigid2d
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
     /// v - the vector to print
-    std::ostream & operator<<(std::ostream & os, const Vector2D & v);
+    std::ostream & operator<<(std::ostream & os, const Vector2D & v)
+    {
+        os << '[' << v.x << ' ' << v.y << ']';
+        return os;
+    }
 
     /// \brief input a 2 dimensional vector
     ///   You should be able to read vectors entered as two numbers
@@ -84,7 +90,11 @@ namespace rigid2d
     /// Hint: The following may be useful:
     /// https://en.cppreference.com/w/cpp/io/basic_istream/peek
     /// https://en.cppreference.com/w/cpp/io/basic_istream/get
-    std::istream & operator>>(std::istream & is, Vector2D & v);
+    std::istream & operator>>(std::istream & is, Vector2D & v)
+    {
+        is >> v.x >> v.y;
+        return is;
+    }
 
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
