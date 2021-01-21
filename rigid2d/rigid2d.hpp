@@ -78,7 +78,7 @@ namespace rigid2d
     /// v - the vector to print
     std::ostream & operator<<(std::ostream & os, const Vector2D & v)
     {
-        os << '[' << v.x << ' ' << v.y << ']';
+        os << '[' << v.x << ' ' << v.y << ']' << '\n';
         return os;
     }
 
@@ -99,6 +99,9 @@ namespace rigid2d
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
     {
+    private:
+        double T[3][3];
+
     public:
         /// \brief Create an identity transformation
         Transform2D();
