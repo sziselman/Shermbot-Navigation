@@ -4,6 +4,8 @@
 /// \brief Library for two-dimensional rigid body transformations.
 
 #include<iosfwd> // contains forward definitions for iostream objects
+#include<cmath>
+
 
 namespace rigid2d
 {
@@ -20,6 +22,11 @@ namespace rigid2d
     /// be useful here
     constexpr bool almost_equal(double d1, double d2, double epsilon=1.0e-12)
     {
+        if (fabs(d1 - d2) > epsilon)
+        {
+            return false;
+        }
+        return true;
     }
 
     /// \brief convert degrees to radians
@@ -30,6 +37,8 @@ namespace rigid2d
     /// if given a compile-time constant as input
     constexpr double deg2rad(double deg)
     {
+        double rad = (PI / (double) 180) * deg;
+        return rad;
     }
 
     /// \brief convert radians to degrees
@@ -37,6 +46,8 @@ namespace rigid2d
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
+        double deg = ((double) 180 / PI) * rad;
+        return deg;
     }
 
     /// static_assertions test compile time assumptions.
