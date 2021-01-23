@@ -11,8 +11,6 @@
 
 namespace rigid2d
 {
-    using namespace std;
-
     /// \brief PI.  Not in C++ standard until C++20.
     constexpr double PI=3.14159265358979323846;
 
@@ -78,11 +76,7 @@ namespace rigid2d
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
     /// v - the vector to print
-    std::ostream & operator<<(std::ostream & os, const Vector2D & v)
-    {
-        os << '[' << v.x << ' ' << v.y << ']' << endl;
-        return os;
-    }
+    std::ostream & operator<<(std::ostream & os, const Vector2D & v);
 
     /// \brief input a 2 dimensional vector
     ///   You should be able to read vectors entered as two numbers
@@ -92,33 +86,7 @@ namespace rigid2d
     /// Hint: The following may be useful:
     /// https://en.cppreference.com/w/cpp/io/basic_istream/peek
     /// https://en.cppreference.com/w/cpp/io/basic_istream/get
-
-    /// spoke with Nathaniel Nyberg and Arun Kumar for help to understand function
-    std::istream & operator>>(std::istream & is, Vector2D & v)
-    {
-        std::cout << "Input a 2 Dimensional Vector:" << endl;
-        is >> v.x;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> v.x;
-        }
-
-        is >> v.y;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> v.y;
-        }
-        return is;
-    }
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+    std::istream & operator>>(std::istream & is, Vector2D & v);
 
     /// \brief a 2 dimensional twist
     class Twist2D
@@ -142,13 +110,6 @@ namespace rigid2d
 
     // /// \brief Read a twist from stdin
     // std::istream & operator>>(std::istream & is, Twist2D & tw);
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
@@ -207,55 +168,12 @@ namespace rigid2d
     /// dtheta (degrees): 90 dx: 3 dy: 5
     /// \param os - an output stream
     /// \param tf - the transform to print
-    std::ostream & operator<<(std::ostream & os, const Transform2D & tf)
-    {
-        double theta = acos(tf.costh);
-        os << "dtheta (degrees): " << theta << " " << "dx: " << tf.x << " " << "dy: " << tf.y << endl;
-        return os;
-    }
+    std::ostream & operator<<(std::ostream & os, const Transform2D & tf);
 
     /// \brief Read a transformation from stdin
     /// Should be able to read input either as output by operator<< or
     /// as 3 numbers (degrees, dx, dy) separated by spaces or newlines
-    std::istream & operator>>(std::istream & is, Transform2D & tf)
-    {
-        // double degrees, dx, dy;
-        // std::cout << "Enter degrees: ";
-        // is >> degrees;
-        // std::cout << "Enter dx: ";
-        // is >> dx;
-        // std::cout << "Enter dy: ";
-        // is >> dy;
-        // return is;
-        double rad;
-        Vector2D vec;
-
-        cout << "Input a Transformation:" << endl;
-        is >> rad;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> rad;
-        }
-
-        is >> vec.x;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> vec.x;
-        }
-
-        is >> vec.y;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> vec.y;
-        }
-
-        tf = Transform2D(vec, rad);
-
-        return is;
-    }
+    std::istream & operator>>(std::istream & is, Transform2D & tf);
 
     /// \brief multiply two transforms together, returning their composition
     /// \param lhs - the left hand operand
