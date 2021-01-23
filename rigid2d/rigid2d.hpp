@@ -71,6 +71,8 @@ namespace rigid2d
     {
         double x = 0.0;
         double y = 0.0;
+
+        Vector2D normalize() const;
     };
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
@@ -89,27 +91,22 @@ namespace rigid2d
     std::istream & operator>>(std::istream & is, Vector2D & v);
 
     /// \brief a 2 dimensional twist
-    class Twist2D
+    struct Twist2D
     {
-        private:
-            double dth;
-            double dx;
-            double dy;
-        public:
-            /// \brief create a 2 dimensional twist 
-            /// \param dth - angular velocity
-            /// \param dx - translational velocity (x)
-            /// \param dy - translational velocity (y)
-            Twist2D(double dth, double dx, double dy);
+        double dth;
+        double dx;
+        double dy;
     };
 
-    // /// \brief should print a human readable version of the twist:
-    // /// \param os - an output stream
-    // /// \param tf - the transform to print
-    // std::ostream & operator<<(std::ostream & os, const Twist2D & tw);
+    /// \brief should print a human readable version of the twist:
+    /// \param os - an output stream
+    /// \param tw - the twist to print
+    std::ostream & operator<<(std::ostream & os, const Twist2D & tw);
 
-    // /// \brief Read a twist from stdin
-    // std::istream & operator>>(std::istream & is, Twist2D & tw);
+    /// \brief Read a twist from stdin
+    /// Should be able to read input either as output by operator<< or
+    /// as 3 numbers (dth, dx, dy) separated by spaces or newlines
+    std::istream & operator>>(std::istream & is, Twist2D & tw);
 
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
@@ -159,7 +156,8 @@ namespace rigid2d
 
         /// \brief convert a twist to a different reference frame using the adjoint
         /// \param tw - the twist to be converted
-        Twist2D Adjoint(Twist2D & tw);
+        /// \return a twist in the new coordinate system
+        Twist2D operator()(Twist2D tw) const;
     };
 
 

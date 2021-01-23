@@ -5,6 +5,15 @@
 
 namespace rigid2d 
 {
+    Vector2D Vector2D::normalize() const
+    {
+        Vector2D vNew;
+        double vecMag = sqrt(pow(x, (double) 2) + pow(x, (double) 2));
+        vNew.x = x/vecMag;
+        vNew.y = y/vecMag;
+        return vNew;
+    }
+
     std::ostream & operator<<(std::ostream & os, const Vector2D & v)
     {
         os << '[' << v.x << ' ' << v.y << ']' << std::endl;
@@ -100,13 +109,6 @@ namespace rigid2d
         return lhs*=rhs;
     }
 
-    Twist2D::Twist2D(double ang_vel, double x_vel, double y_vel)
-    {
-        dth = ang_vel;
-        dx = x_vel;
-        dy = y_vel;
-    }
-
     std::ostream & operator<<(std::ostream & os, const Transform2D & tf)
     {
         double theta = acos(tf.costh);
@@ -114,7 +116,7 @@ namespace rigid2d
         return os;
     }
 
-        std::istream & operator>>(std::istream & is, Transform2D & tf)
+    std::istream & operator>>(std::istream & is, Transform2D & tf)
     {
         double rad;
         Vector2D vec;
@@ -146,4 +148,44 @@ namespace rigid2d
         return is;
     }
 
+    Twist2D Transform2D::operator()(Twist2D tw) const
+    {
+        Twist2D twNew;
+        twNew.dth = tw.dth;
+        twNew.dx = (y * tw.dth) + (costh * tw.dx) - (sinth * tw.dy);
+        twNew.dy = -(x * tw.dth) + (sinth * tw.dx) + (costh * tw.dy);
+        return twNew;
+    }
+
+    std::ostream & operator<<(std::ostream & os, const Twist2D & tw)
+    {
+        os << "angular velocity: " << tw.dth << " " << "Translational velocity x: " << tw.dx << " " << "Translational velocity y: " << tw.dy << std::endl;
+        return os;
+    }
+
+    std::istream & operator>>(std::istream & is, Twist2D & tw)
+    {
+        std::cout << "Input a 2D Twist:" << std::endl;
+        is >> tw.dth;
+        while (is.fail()) {
+            is.clear();
+            is.ignore();
+            is >> tw.dth;
+        }
+
+        is >> tw.dx;
+        while (is.fail()) {
+            is.clear();
+            is.ignore();
+            is >> tw.dx;
+        }
+
+        is >> tw.dy;
+        while (is.fail()) {
+            is.clear();
+            is.ignore();
+            is >> tw.dy;
+        }
+        return is;
+    }
 }
