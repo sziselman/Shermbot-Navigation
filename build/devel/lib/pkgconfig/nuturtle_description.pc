@@ -1,0 +1,8 @@
+prefix=/home/sarah/Documents/ME_495/ws/src/repository/build/devel
+
+Name: nuturtle_description
+Description: Description of nuturtle_description
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: roscpp std_msgs

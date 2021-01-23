@@ -3,12 +3,12 @@ project(rigid2d)
 
 # create the rigid2d library and add it's include directories
 add_library(rigid2d src/rigid2d.cpp)
-target_include_directories(rigid2d.cpp PUBLIC include/)
+target_include_directories(rigid2d PUBLIC include/rigid2d/rigid2d.hpp)
 target_compile_features(rigid2d PUBLIC cxx_std_17) # enable C++ 17
 target_compile_options(rigid2d PUBLIC -Wall -Wextra)
 
 # create the executable  and link it with the rigid2d library
-add_executable(rigid2d_main main.cpp)
+add_executable(rigid2d_main rigid2d.cpp)
 target_link_libraries(rigid2d_main rigid2d.cpp)
 
 enable_testing()
