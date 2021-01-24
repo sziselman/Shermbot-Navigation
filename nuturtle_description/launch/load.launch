@@ -1,10 +1,23 @@
 <launch>
-    <arg name="use_rviz" default="true"/>
+    <arg name="model" default="(env NUTURTLE_MODEL)" doc="model type burger"/>
+    <arg name="multi_robot_name" default=""/>
+
+    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+        <param name="use_gui" value="true"/>
+        <param name="rate" value="50"/>
+    </node>
+    
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <param name="publish_frequency" type="double" value="50.0" />
+        <param name="tf_prefix" value="$(arg multi_robot_name)"/>
+    </node>
+    
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+    <param name="robot_description" command="$(arg urdf_file)"/>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuturtle_description)/rviz/model.rviz"/>
+    <arg name="use_rviz" default="true" doc="Controls whether rviz is launched-- default true"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
-
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="rviz" pkg="rviz" type="rviz" />
 
 </launch>
