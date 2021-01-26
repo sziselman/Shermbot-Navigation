@@ -1,21 +1,21 @@
-Start testing: Jan 25 21:34 CST
+Start testing: Jan 26 09:43 CST
 ----------------------------------------------------------
 1/1 Testing: Test_of_Rigid2d
 1/1 Test: Test_of_Rigid2d
 Command: "/home/sarah/Documents/ME_495/ws/src/repository/rigid2d/build/rigid_test"
 Directory: /home/sarah/Documents/ME_495/ws/src/repository/rigid2d/build
-"Test_of_Rigid2d" start time: Jan 25 21:34 CST
+"Test_of_Rigid2d" start time: Jan 26 09:43 CST
 Output:
 ----------------------------------------------------------
 ===============================================================================
-All tests passed (33 assertions in 9 test cases)
+All tests passed (36 assertions in 10 test cases)
 
 <end of output>
-Test time =   0.00 sec
+Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"Test_of_Rigid2d" end time: Jan 25 21:34 CST
+"Test_of_Rigid2d" end time: Jan 26 09:43 CST
 "Test_of_Rigid2d" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Jan 25 21:34 CST
+End testing: Jan 26 09:43 CST

@@ -1,2 +1,2 @@
-Test_of_Rigid2d 1 0.00331511
+Test_of_Rigid2d 2 0.00267224
 ---

@@ -174,3 +174,23 @@ TEST_CASE("Transform Composition Operator (*=)", "[transform]"){ // Arun, Kumar
     REQUIRE(almost_equal(transMat.getX(), 0));
     REQUIRE(almost_equal(transMat.getY(), 0));
 }
+
+TEST_CASE("Change twist reference frame", "[transform]"){ // Sarah, Ziselman
+	using namespace rigid2d;
+	
+	Vector2D p;
+	p.x = 1;
+	p.y = 2;
+	
+	Transform2D transMat = Transform2D(p, PI/2);
+	
+	Twist2D tw = Twist2D();
+    tw.dth = 2;
+    tw.dx = 3;
+    tw.dy = 5;
+
+	Twist2D twNew = transMat(tw);
+	REQUIRE(almost_equal(twNew.dth, 2));
+	REQUIRE(almost_equal(twNew.dx, -1));
+	REQUIRE(almost_equal(twNew.dy, 1));
+}
