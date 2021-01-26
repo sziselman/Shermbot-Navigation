@@ -1,4 +1,4 @@
-#include "rigid2d.hpp"
+#include "rigid2d/rigid2d.hpp"
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -23,7 +23,6 @@ namespace rigid2d
     /// spoke with Nathaniel Nyberg and Arun Kumar for help to understand function
     std::istream & operator>>(std::istream & is, Vector2D & v)
     {
-        std::cout << "Input a 2 Dimensional Vector:" << std::endl;
         is >> v.x;
         while (is.fail()) {
             is.clear();
@@ -38,6 +37,26 @@ namespace rigid2d
             is >> v.y;
         }
         return is;
+    }
+
+    const double& Transform2D::getCosTh() const
+    {
+        return costh;
+    }
+
+    const double& Transform2D::getSinTh() const
+    {
+        return sinth;
+    }
+
+    const double& Transform2D::getX() const
+    {
+        return x;
+    }
+
+    const double& Transform2D::getY() const
+    {
+        return y;
     }
 
     Transform2D::Transform2D()
@@ -75,8 +94,8 @@ namespace rigid2d
     Vector2D Transform2D::operator()(Vector2D v) const
     {
         Vector2D vNew;
-        vNew.x = (v.x * costh) + (v.y * (-sinth));
-        vNew.y = (v.x * sinth) + (v.y * costh);
+        vNew.x = (v.x * costh) + (v.y * (-sinth)) + x;
+        vNew.y = (v.x * sinth) + (v.y * costh) + y;
         return vNew;
     }
 
@@ -97,8 +116,8 @@ namespace rigid2d
         double mat_10 = (sinth * rhs.costh) + (costh * rhs.sinth);
         double mat_02 = (costh * rhs.x) + ((-sinth) * rhs.y) + x;
         double mat_12 = (sinth * rhs.x) + (costh * rhs.y) + y;
-        costh = acos(mat_00);
-        sinth = asin(mat_10);
+        costh = mat_00;
+        sinth = mat_10;
         x = mat_02;
         y = mat_12;
         return *this;
@@ -121,7 +140,6 @@ namespace rigid2d
         double rad;
         Vector2D vec;
 
-        std::cout << "Input a Transformation:" << std::endl;
         is >> rad;
         while (is.fail()) {
             is.clear();
@@ -165,7 +183,6 @@ namespace rigid2d
 
     std::istream & operator>>(std::istream & is, Twist2D & tw)
     {
-        std::cout << "Input a 2D Twist:" << std::endl;
         is >> tw.dth;
         while (is.fail()) {
             is.clear();

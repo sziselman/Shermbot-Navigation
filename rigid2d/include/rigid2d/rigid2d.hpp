@@ -118,6 +118,18 @@ namespace rigid2d
         double y;
 
     public:
+        /// \brief accesses the cos(theta) value of the function
+        const double& getCosTh() const;
+
+        /// \brief access the sin(theta) value of the function
+        const double& getSinTh() const;
+
+        /// \brief accesses the x value of the transformation
+        const double& getX() const;
+
+        /// \brief accesses the y value of the transformation
+        const double& getY() const;
+
         /// \brief Create an identity transformation
         Transform2D();
 

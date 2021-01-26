@@ -15,8 +15,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include "geometry_msgs/Twist.h"
-ros::Publisher velocity_publisher;
-
 
 /// \brief moves the turtle straight
 /// \param speed - the speed that the turtle moves
