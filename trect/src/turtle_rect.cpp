@@ -9,12 +9,21 @@
 ///     topic_name (topic_type): description of the topic
 /// SERVICES:
 ///     service_name (service_type): description of the service
-/// Followed tutorials provided by turtlesim page on ros wiki
+/// Roughly followed tutorials provided by turtlesim page on ros wiki
 
 #include <ros/ros.h>
-#include <iostream>
-#include <stdlib.h>
 #include "geometry_msgs/Twist.h"
+#include "turtlesim/Pose.h"
+#include <sstream>
+#include "std_msgs/String.h"
+
+const double PI = 3.14159265359;
+
+
+/************************************************************************
+* Helper Function Declaration
+************************************************************************/
+
 
 /// \brief moves the turtle straight
 /// \param speed - the speed that the turtle moves
@@ -33,53 +42,58 @@ void rotate(double angular_speed, double angle, bool clockwise);
 /// \return the angle in radians
 double deg2rad(double degrees);
 
+/// \brief callback function for turtlesim pose Subscriber
+void poseCallback(const turtlesim::Pose::ConstPtr & pose_msg);
+
+
+/************************************************************************
+* Main Function
+************************************************************************/
+
 
 int main(int argc, char* argv[])
 {
-    double max_xdot, max_wdot, frequency;
+    double max_xdot, max_wdot;
+    int frequency;
     double speed, distance;
 
+    geometry_msgs::Twist msg;
+    turtlesim::Pose turtlesim_pose;
+    
     // initialize ROS node "turtle_rect"
     ros::init(argc, argv, "turtle_rect");
     // initialize node handle
     ros::NodeHandle n;
 
+    n.getParam("max_xdot", max_xdot);
+    n.getParam("max_wdot", max_wdot);
+    n.getParam("frequency", frequency);
+
     ros::Publisher pub = n.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", frequency);
+    ros::Subscriber sub = n.subscribe("/turtle1/pose", 10, poseCallback);
+
+    ros::Rate loop_rate(10);
+
+    ROS_INFO("max_xdot: %f max_wdot: %f frequency: %d", max_xdot, max_wdot, frequency);
+    while (ros::ok())
+    {
+        ROS_INFO("hi");
+        // pub.publish(msg);
+
+        ros::spinOnce();
+
+        loop_rate.sleep();
+    }
     
-    // if parameters exist, get them and log them as ROS_INFO messages
-    if (ros::param::get("/max_xdot", max_xdot))
-    {
-        ros::param::get("/max_xdot", max_xdot);
-        ROS_INFO("The maximum translational velocity of the robot is %f\n", max_xdot);
-    }
-    if (ros::param::get("/max_wdot", max_wdot))
-    {
-        ros::param::get("/max_wdot", max_wdot);
-        ROS_INFO("The maximum rotational velocity of the robot is %f\n", max_wdot);
-    }
-    if (ros::param::get("/frequency", frequency))
-    {
-        ros::param::get("/frequency", frequency);
-        ros::Rate rate(frequency);
-        ROS_INFO("The frequency of the control loop is %f\n", frequency);
-    }
-
-    while(ros::ok()) 
-    {
-        // initialize the message
-        geometry_msgs::Twist msg;
-        // publish the message
-        pub.publish(msg);
-
-        // delays until next message
-        rate.sleep();
-
-    }
+    return 0;
 }
 
-void move(double speed, double distance, bool isForward)
+/************************************************************************
+* Helper Function Declarations
+************************************************************************/
+
+
+void poseCallback(const turtlesim::Pose::ConstPtr & pose_msg)
 {
-    using namespace std;
-    
-    geometry_msgs::Twist vel_msg;
+    ROS_INFO("Position of turtle is x: %f y:%f th: %f linVel: %f angVel:%f", pose_msg->x, pose_msg->y, pose_msg->theta, pose_msg->linear_velocity, pose_msg->angular_velocity);
 }

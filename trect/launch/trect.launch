@@ -1,10 +1,10 @@
 <launch>
-    <node pkg="turtle_rect" type="turtle_rect" name="turtle_rect" doc="This package moves the turtle in turtlesim in a rectangular trajectory">
-        <param name="max_xdot" value="2.0" />
-        <param name="max_wdot" value="1.0" />
-        <param name="frequency" value="100" />
+    <node pkg="trect" type="turtle_rect" name="turtle_rect">
     </node>
 
+    <param name="max_xdot" type="double" value="2.0" />
+    <param name="max_wdot" type="double" value="1.0" />
+    <param name="frequency" type="int" value="100" />
+
     <node pkg="turtlesim" name="sim" type="turtlesim_node"/>
-    <node pkg="trect" name="trect" type="turtle_rect"/>
 </launch>
