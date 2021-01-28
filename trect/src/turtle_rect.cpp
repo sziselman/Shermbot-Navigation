@@ -1,8 +1,11 @@
 /// \file turtle_rect.cpp 
-/// \brief contains a node called turtle_rect
+/// \brief contains a node called turtle_rect which will make the turtle simulator move in a rectangular trajectory
+///        that is designated by the user (x, y, w, h). The movement is started by calling a /start service.
 ///
 /// PARAMETERS:
-///     parameter_name (parameter_type): description of the parameter
+///     max_xdot (double) : the maximum linear velocity
+///     max_wdot (double) : the maximum angular velocity
+///     frequency (int) : the frequency of the control loop
 /// PUBLISHES:
 ///     turtle1/pose (turtlesim/Pose): The x, y, theta, linear velocity and angular velocity of the turtlesim
 /// SUBSCRIBES:
