@@ -4,13 +4,16 @@
 /// PARAMETERS:
 ///     parameter_name (parameter_type): description of the parameter
 /// PUBLISHES:
-///     topic_name (topic_type): description of topic
+///     turtle1/pose (turtlesim/Pose): The x, y, theta, linear velocity and angular velocity of the turtlesim
 /// SUBSCRIBES:
-///     topic_name (topic_type): description of the topic
+///     turtle1/cmd_vel (geometry_msgs/Twist): The linear and angular command velocity for the turtlesim.
 /// SERVICES:
-///     service_name (service_type): description of the service
+///     trect/start (trect/Start): Clears the background of the turtle simulator, draws the desired trajectory
+///     in yellow, causes the robot to follow the rectangle (path in lavender), provides the location and dimensions
+///     of the rectangle to the node.
+
+
 /// Roughly followed tutorials provided by turtlesim page on ros wiki
-/// Used the following link as a source: https://cse.sc.edu/~jokane/agitr/agitr-letter-param.pdf
 
 
 #include <ros/ros.h>
@@ -27,12 +30,11 @@
 #include <sstream>
 #include "std_msgs/String.h"
 
-const double PI = 3.14159265359;
+static const double PI = 3.14159265359;
 
-
-/************************************************************************
-* Helper Function Declaration
-************************************************************************/
+/****************************
+* Initializing global publisher, subscriber, services, clients, etc.
+****************************/
 
 bool start(trect::start::Request &req, trect::start::Response &res);
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_msg);
@@ -48,21 +50,27 @@ static ros::ServiceClient clear_client;
 
 static turtlesim::PoseConstPtr turtle_pose;
 
+/****************************
+* Declare states that the turtlesim will be in
+****************************/
 enum State {Idle, bottomLine, rightLine, topLine, leftLine, Rotate};
 
-State currentState, previousState;
+static State currentState, previousState;
 
+/****************************
+* Declare global variables
+****************************/
 static double width, height;
 
-/************************************************************************
+/****************************
 * Declare desired position of the turtle
-************************************************************************/
-double desiredX, desiredY, desiredTh;
+****************************/
+static double desiredX, desiredY, desiredTh;
 
-/************************************************************************
+
+/****************************
 * Main Function
-************************************************************************/
-
+****************************/
 int main(int argc, char* argv[])
 {
     /**********************
@@ -71,13 +79,11 @@ int main(int argc, char* argv[])
     ros::init(argc, argv, "turtle_rect");
     ros::NodeHandle n;
 
-
     /**********************
-    * Initialize variables
+    * Initialize local variables
     **********************/
     double max_xdot, max_wdot, linVel, angVel;
     int frequency;
-
     geometry_msgs::Twist msg;
 
     /**********************
@@ -87,13 +93,14 @@ int main(int argc, char* argv[])
     n.getParam("max_wdot", max_wdot);
     n.getParam("frequency", frequency);
 
-
+    /**********************
+    * Set the linear and angular velocity to maximum values
+    **********************/
     linVel = max_xdot;
     angVel = max_wdot;
 
-
     /**********************
-    * Initialize Publisher, Subscriber & Service
+    * Define publisher, subscriber, service and clients
     **********************/
     pub = n.advertise<geometry_msgs::Twist>("/turtle1/cmd_vel", frequency);
     sub = n.subscribe("/turtle1/pose", 10, poseCallback);
@@ -104,7 +111,6 @@ int main(int argc, char* argv[])
     teleRel_client = n.serviceClient<turtlesim::TeleportRelative>("turtle1/teleport_relative");
     clear_client = n.serviceClient<std_srvs::Empty>("clear");
     
-    
     ros::Rate loop_rate(frequency);    // ensures a somewhat-consistent publishing frequency
 
     /**********************
@@ -112,19 +118,24 @@ int main(int argc, char* argv[])
     **********************/
     ROS_INFO("max_xdot: %f max_wdot: %f frequency: %d", max_xdot, max_wdot, frequency);
     
-    /********************************************
-    * main while loop
-    ********************************************/
     while(ros::ok())
     {
         ros::spinOnce();
         switch (currentState)
         {
+            /**********************
+            * Idle : Turtle is Idle before moving in rectangle trajectory and after finishing moving in rectangle trajectory
+            * When turtle reaches corner, transitions to Rotate state
+            **********************/
             case Idle:
                 msg.linear.x = 0;
                 msg.angular.z = 0;
                 pub.publish(msg);
                 break;
+            /**********************
+            * Bottom Line : When the turtle is moving along the bottom line of the rectangle trajectory
+            * When turtle reaches corner, transitions to Rotate state
+            **********************/
             case bottomLine:
                 msg.linear.x = linVel;
                 msg.angular.z = 0;
@@ -137,7 +148,10 @@ int main(int argc, char* argv[])
                 }
                 pub.publish(msg);
                 break;
-
+            /**********************
+            * Right Line : When the turtle is moving along the right line of the rectangle trajectory
+            * When turtle reaches corner, transitions to Rotate state
+            **********************/
             case rightLine:
                 msg.linear.x = linVel;
                 msg.angular.z = 0;
@@ -150,7 +164,10 @@ int main(int argc, char* argv[])
                 }
                 pub.publish(msg);
                 break;
-
+            /**********************
+            * Top Line : When the turtle is moving along the top line of the rectangle trajectory
+            * When turtle reaches corner, transitions to Rotate state
+            **********************/
             case topLine:
                 msg.linear.x = linVel;
                 msg.angular.z = 0;
@@ -164,7 +181,10 @@ int main(int argc, char* argv[])
                 }
                 pub.publish(msg);
                 break;
-
+            /**********************
+            * Left Line : When the turtle is moving along the left line of the rectangle trajectory
+            * When turtle reaches corner, transitions to Rotate state
+            **********************/
             case leftLine:
                 msg.linear.x = linVel;
                 msg.angular.z = 0;
@@ -178,7 +198,10 @@ int main(int argc, char* argv[])
                 }
                 pub.publish(msg);
                 break;
-
+            /**********************
+            * Rotate : When the turtle is rotating at a corner of the rectangle trajectory
+            * Depending on the previous state of the turtle, will transition to new state of rectangle trajectory
+            **********************/
             case Rotate:
                 msg.linear.x = 0;
                 msg.angular.z = angVel;
@@ -214,9 +237,7 @@ int main(int argc, char* argv[])
                 pub.publish(msg);
                 break;
         }
-
-    }
-    
+    }  
     return 0;
 }
 
@@ -224,12 +245,18 @@ int main(int argc, char* argv[])
 * Helper Function Declarations
 ************************************************************************/
 
-
+/// \brief callback function for subscriber
+///
+/// \param pose_msg : the pose message for the subscriber
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_msg)
 {
     turtle_pose = pose_msg;
 }
 
+/// \brief start function for start service
+///
+/// \param req : The service request
+/// \param res : The service response
 bool start(trect::start::Request &req, trect::start::Response &res)
 {
     width = req.width;
@@ -242,10 +269,8 @@ bool start(trect::start::Request &req, trect::start::Response &res)
     desiredY = req.y;
     desiredTh = 0;
 
-    ROS_INFO("The location is (%f, %f). The dimensions are (%f, %f)", (double) req.x, (double) req.y, (double) req.width, (double) req.height);
-
     /***************************
-    * Set color of the pen to indigo
+    * Set color of the pen to pastel yellow
     ***************************/
     turtlesim::SetPen turtle_pen;
     turtlesim::TeleportAbsolute turtle_absPos;
