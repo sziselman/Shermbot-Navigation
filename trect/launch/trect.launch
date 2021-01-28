@@ -1,5 +1,5 @@
 <launch>
-    <node pkg="trect" type="turtle_rect" name="turtle_rect">
+    <node pkg="trect" output = "screen" type="turtle_rect" name="turtle_rect">
     </node>
 
     <param name="max_xdot" type="double" value="2.0" />
