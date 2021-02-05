@@ -251,7 +251,7 @@ namespace rigid2d
     /// \brief computes the transformation corresponding to a rigid body following a
     /// constant twist for one unit time
     /// \return Transform2D
-    Trasnform2D integrateTwist(Twist2D & tw);
+    Transform2D integrateTwist(Twist2D & tw);
 }
 
 #endif

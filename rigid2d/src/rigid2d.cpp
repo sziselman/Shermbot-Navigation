@@ -74,14 +74,6 @@ namespace rigid2d
         return *this;
     }
 
-    // Vector2D Vector2D::operator*(double scalar)
-    // {
-    //     Vector2D vNew;
-    //     vNew.x = x * scalar;
-    //     vNew.y = y * scalar;
-    //     return vNew;
-    // }
-
     Vector2D operator*(const Vector2D & lhs, const double rhs)
     {
         Vector2D vNew;
@@ -310,5 +302,42 @@ namespace rigid2d
             is >> tw.dy;
         }
         return is;
+    }
+
+    Transform2D integrateTwist(Twist2D & tw)
+    {
+        Transform2D T_bs, T_ss, intTwist;
+        Vector2D vecS;                              // vector with x_s and y_s to input for T_bs
+        Vector2D vec;
+
+        if (tw.dth == 0)
+        {
+            vec.x = tw.dx;
+            vec.y = tw.dy;
+            intTwist = Transform2D(vec);
+        } else
+        {
+            /***********************************
+            * Want to solve for center of rotation
+            * Transform between COR frame and body frame
+            ***********************************/
+            vecS.x = tw.dy / tw.dth;
+            vecS.y = - (tw.dx / tw.dth);
+            T_bs = Transform2D(vecS);
+
+            /***********************************
+            * Want to find T_ss'
+            ***********************************/
+            T_ss = Transform2D(tw.dth);
+
+            /***********************************
+            * We know that T_bs = T_s'b'
+            * Solve for T_bb' (intTwist)
+            ***********************************/
+            intTwist = T_bs;
+            intTwist *= T_ss;
+            intTwist *= T_bs;
+        }
+        return intTwist;
     }
 }
