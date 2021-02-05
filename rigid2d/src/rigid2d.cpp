@@ -5,6 +5,112 @@
 
 namespace rigid2d 
 {
+    double normalize_angle(double rad)
+    {
+        double radMod, newRad;
+        radMod = std::fmod(rad, 2*PI);
+        if (radMod > 0 && radMod < PI)
+        {
+            newRad = radMod;
+        } else if (radMod > PI && radMod < 2*PI)
+        {
+            newRad = radMod - (2 * PI);
+        } else if (radMod < -PI && radMod < 0)
+        {
+            newRad = radMod;
+        } else if (radMod < -2*PI && radMod < -PI)
+        {
+            newRad = radMod + (2 * PI);
+        }
+        return newRad;
+    }
+
+    Vector2D::Vector2D()
+    {
+        x = 0;
+        y = 0;
+    }
+
+    Vector2D::Vector2D(double xVal, double yVal)
+    {
+        x = xVal;
+        y = yVal;
+    }
+
+    Vector2D & Vector2D::operator+=(const Vector2D & rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+
+    Vector2D Vector2D::operator+(Vector2D & rhs)
+    {
+        Vector2D vNew;
+        vNew.x = x + rhs.x;
+        vNew.y = y + rhs.y;
+        return vNew;
+    }
+
+    Vector2D & Vector2D::operator-=(const Vector2D & rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+    Vector2D Vector2D::operator-(Vector2D & rhs)
+    {
+        Vector2D vNew;
+        vNew.x = x - rhs.x;
+        vNew.y = y - rhs.y;
+        return vNew;
+    }
+
+    Vector2D & Vector2D::operator*=(double scalar)
+    {
+        x *= scalar;
+        y *= scalar;
+        return *this;
+    }
+
+    // Vector2D Vector2D::operator*(double scalar)
+    // {
+    //     Vector2D vNew;
+    //     vNew.x = x * scalar;
+    //     vNew.y = y * scalar;
+    //     return vNew;
+    // }
+
+    Vector2D operator*(const Vector2D & lhs, const double rhs)
+    {
+        Vector2D vNew;
+        vNew.x = lhs.x * rhs;
+        vNew.y = lhs.y * rhs;
+        return vNew;
+    }
+
+    Vector2D operator*(const double lhs, const Vector2D & rhs)
+    {
+        Vector2D vNew;
+        vNew.x = rhs.x * lhs;
+        vNew.y = rhs.y * lhs;
+        return vNew;
+    }
+
+    double Vector2D::magnitude() const
+    {
+        double mag = sqrt(pow(x, (double) 2) + pow(x, (double) 2));
+        return mag;
+    }
+
+    double Vector2D::angle() const
+    {
+        double tanth = y / x;
+        double ang = atan(tanth);
+        return ang;
+    }
+
     Vector2D Vector2D::normalize() const
     {
         Vector2D vNew;

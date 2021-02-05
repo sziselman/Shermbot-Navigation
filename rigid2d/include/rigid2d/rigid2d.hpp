@@ -65,15 +65,71 @@ namespace rigid2d
 
     static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
 
+    /// \brief turns any angle into an equivalent between -PI and PI
+    /// \param rad - angle in radians
+    /// \return equivalent angle between -PI and PI
+    double normalize_angle(double rad);
 
     /// \brief A 2-Dimensional Vector
     struct Vector2D
     {
         double x = 0.0;
         double y = 0.0;
+        
+        /// \brief constructor that creates a zero vector
+        /// \return zero vector
+        Vector2D();
+
+        /// \brief constructor that takes two doubles
+        /// \param x - x value
+        /// \param y - y value
+        /// \return 2D Vector
+        Vector2D(double xVal, double yVal);
 
         Vector2D normalize() const;
+
+        /// \brief operator to perform basic vector addition
+        /// \param rhs - the vector to add
+        /// \return - the added vectors
+        Vector2D & operator+=(const Vector2D & rhs);
+
+        /// \brief operator to perform basic vector addition
+        /// \param rhs - the vector to add
+        /// \return - the added vectors
+        Vector2D operator+(Vector2D & rhs);
+
+        /// \brief operator to perform basic vector subtraction
+        /// \param rhs - the vector to subtract
+        /// \return - the subtracted vectors
+        Vector2D & operator-=(const Vector2D & rhs);
+
+        /// \brief operator to perform basic vector subtraction
+        /// \param rhs - the vector to subtract
+        /// \return - the subtracted vectors
+        Vector2D operator-(Vector2D & rhs);
+
+        /// \brief operator to perform basic scalar multiplication
+        /// \param scalar - the scalar to multiply the vector by
+        /// \return - the scaled vector
+        Vector2D & operator*=(double scalar);
+
+        // /// \brief operator to perform basic scalar multiplication
+        // /// \param scalar - the scalar to multiply the vector by
+        // /// \return - the scaled vector
+        // Vector2D operator*(double scalar);
+        
+        /// \brief computes the magnitude of a 2D vector
+        /// \return magnitude (double)
+        double magnitude() const;
+
+        /// \brief computes the angle of the vector
+        /// \return angle (double)
+        double angle() const;
     };
+
+    Vector2D operator*(const Vector2D & lhs, const double rhs);
+
+    Vector2D operator*(const double lhs, const Vector2D & rhs);
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
@@ -191,6 +247,11 @@ namespace rigid2d
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
+
+    /// \brief computes the transformation corresponding to a rigid body following a
+    /// constant twist for one unit time
+    /// \return Transform2D
+    Trasnform2D integrateTwist(Twist2D & tw);
 }
 
 #endif

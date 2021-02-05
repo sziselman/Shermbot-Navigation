@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_MAIN
-#include "catch/catch.hpp"
+#include <catch_ros/catch.hpp>
 #include "rigid2d/rigid2d.hpp"
 #include <cmath>
 #include <iostream>
