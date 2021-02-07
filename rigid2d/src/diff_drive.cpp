@@ -5,48 +5,79 @@
 
 namespace rigid2d
 {
-    std::ostream & operator<<(std::ostream & os, const DiffDrive & dd)
+    const double& DiffDrive::getWheelBase() const
     {
-        os << '(' << dd.x << ', ' << dd.y << ', ' << dd.th << ')' << std::endl;
+        return wheelBase;
     }
 
-    std::istream & operator<<(std::istream & is, DiffDrive & dd)
+    const double& DiffDrive::getWheelRad() const
     {
-        is >> dd.wheelBase;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> dd.wheelBase;
-        }
+        return wheelRad;
+    }
 
-        is >> dd.wheelRad;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> dd.wheelRad;
-        }
+    const double& DiffDrive::getX() const
+    {
+        return x;
+    }
 
-        is >> dd.x;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> dd.x;
-        }
+    const double& DiffDrive::getY() const
+    {
+        return y;
+    }
 
-        is >> dd.y;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> dd.y;
-        }
+    const double& DiffDrive::getTh() const
+    {
+        return th;
+    }
 
-        is >> dd.th;
-        while (is.fail()) {
-            is.clear();
-            is.ignore();
-            is >> dd.th;
-        }
-        
-        return is;
+    const double& DiffDrive::getThL() const
+    {
+        return thL;
+    }
+
+    const double& DiffDrive::getThR() const
+    {
+        return thR;
+    }
+
+    wheelVel DiffDrive::convertTwistB(const Twist2D & tw)
+    {
+        wheelVel u;
+        double d = wheelBase / 2;
+        double r = wheelRad;
+
+        u.uR = (tw.dx / r) - ((tw.dy / r) * tan(th)) + (d * tw.dth / r);
+        u.uL = u.uR - ((2 * d / r) * tw.dth);
+        return u;
+    }
+
+    wheelVel DiffDrive::convertTwistW(const Twist2D & tw)
+    {
+        wheelVel u;
+        double d = wheelBase / 2;
+        double r = wheelRad;
+
+        u.uR = (tw.dx + (d * tw.dth * cos(th))) / (r * cos(th));
+        u.uL = u.uR - ((2 * d / r) * tw.dth);
+        return u;
+    }
+
+    DiffDrive & DiffDrive::operator()(double thLnew, double thRnew)
+    {
+        double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
+        double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
+        double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
+        th += delTh;
+        x += delX;
+        y += delY;
+        thL = thLnew;
+        thR = thRnew;
+        return *this;
+    }
+
+    std::ostream & operator<<(std::ostream & os, const DiffDrive & dd)
+    {
+        os << '(' << dd.x << ',' << dd.y << ',' << dd.th << ')' << std::endl;
+        return os;
     }
 }
