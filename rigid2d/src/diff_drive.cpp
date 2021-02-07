@@ -5,6 +5,17 @@
 
 namespace rigid2d
 {
+    DiffDrive::DiffDrive(double base, double rad, double xx, double yy, double theta, double left, double right)
+    {
+        wheelBase = base;
+        wheelRad = rad;
+        x = xx;
+        y = yy;
+        th = theta;
+        thL = left;
+        thR = right;
+    }
+    
     const double& DiffDrive::getWheelBase() const
     {
         return wheelBase;

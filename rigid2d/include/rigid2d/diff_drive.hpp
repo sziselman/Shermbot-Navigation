@@ -28,6 +28,16 @@ namespace rigid2d
             double thL;
             double thR;
         public:
+            /// \brief create a Differential Drive object
+            /// \param wheelBase;
+            /// \param wheelRad;
+            /// \param x;
+            /// \param y;
+            /// \param th;
+            /// \param thL;
+            /// \param thR;
+            DiffDrive(double base, double rad, double xx, double yy, double theta, double left, double right);
+
             /// \brief access the wheel base value
             /// \return wheel base value
             const double& getWheelBase() const;

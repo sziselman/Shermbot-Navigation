@@ -25,8 +25,8 @@
 ****************************/
 
 static ros::Publisher odom_pub;
-static ros::Subscriber sub;
-
+static ros::Subscriber joint_sub;
+static double wheelBase, wheelRad;
 /****************************
 * Main Function
 ****************************/
@@ -39,13 +39,52 @@ int main(int argc, char* argv[])
     ros::nodeHandle n;
 
     /****************************
+    * Initialize local variables
+    ****************************/
+    sensor_msgs::JointState left_msg;
+    sensor_msgs::JointState right_msg;
+    nav_msgs::Odometry odom_msg;
+
+    int frequency = 100;
+    double x_i = 0;
+    double y_i = 0;
+    double th_i = 0;
+    double left_i = 0;
+    double right_i = 0;
+
+    rigid2d::DiffDrive odom_diffdrive;
+
+    /****************************
+    * Reading parameters from parameter server
+    ****************************/
+    n.getParam("wheel_base", wheelBase);
+    n.getParam("wheel_radius", wheelRad);
+
+    /****************************
     * Define publisher, subscriber, services and clients
     ****************************/
-    odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
-    sub = n.subscribe("/sensor_msgs")
+    odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
+    tf::TransformBroadcaster odom_broadcaster;
+    left_sub = n.subscribe("joint_states", jointStateCallback);
+    right_sub = n.subscribe("joint_states", jointStateCallback);
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(frequency);
 
-    ROS_INFO("hi");
+    /****************************
+    * Set initial parameters of the differential drive robot to 0
+    ****************************/
+    odom_diffdrive = DiffDrive(wheelBase, wheelRad, x_i, y_i, th_i, left_i, right_i);
 
+    ROS_INFO("Hello");
+
+    while (ros::ok())
+    {
+        ros::spinOnce();
+
+    }
+}
+
+void jointStateCallback(const sensor_msgs::JointState msg)
+{
+    ROS_INFO("IN JOINT STATE CALLBACK");
 }
