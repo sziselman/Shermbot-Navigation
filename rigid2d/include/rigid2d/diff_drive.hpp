@@ -79,6 +79,12 @@ namespace rigid2d
             /// \return wheel velocities
             wheelVel convertTwistW(const Twist2D & tw);
 
+            /// \brief gets the twist associated with new wheel angles
+            /// \param thLnew - the new left wheel angle
+            /// \param thRnew - the new right wheel angle
+            /// \return the twist
+            Twist2D getTwist(double thLnew, double thRnew);
+
             /// \brief updates the configuration of the robot given updated wheel angles
             /// \param thLnew - the new left wheel angle
             /// \param thRnew - the new right wheel angle

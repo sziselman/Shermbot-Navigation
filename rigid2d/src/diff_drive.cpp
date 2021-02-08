@@ -73,6 +73,17 @@ namespace rigid2d
         return u;
     }
 
+    Twist2D DiffDrive::getTwist(double thLnew, double thRnew)
+    {
+        Twist2D twist;
+        double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
+        double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
+        double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
+        twist.dth = delTh;
+        twist.dx = delX;
+        twist.dy = delY;
+        return twist;
+    }
     DiffDrive & DiffDrive::operator()(double thLnew, double thRnew)
     {
         double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));

@@ -10,8 +10,10 @@ project(rigid2d)
 find_package(catkin REQUIRED COMPONENTS
   catch_ros
   message_generation
+  nav_msgs
   roscpp
   std_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -135,6 +137,8 @@ add_library(${PROJECT_NAME}
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_main src/main.cpp)
+add_executable(odometer src/odometer.cpp)
+add_executable(fake_turtle src/fake_turtle.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -144,12 +148,15 @@ add_library(${PROJECT_NAME}
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(odometer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(fake_turtle ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_main
 #  ${PROJECT_NAME}
 # )
+target_link_libraries(odometer ${catkin_LIBRARIES} rigid2d)
+target_link_libraries(fake_turtle ${catkin_LIBRARIES} rigid2d)
 
 #############
 ## Install ##
@@ -167,9 +174,9 @@ add_library(${PROJECT_NAME}
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS odometry
-# RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+install(TARGETS fake_turtle odometer
+RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
