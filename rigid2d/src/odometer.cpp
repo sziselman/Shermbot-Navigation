@@ -97,18 +97,17 @@ int main(int argc, char* argv[])
         ros::spinOnce();
 
         ros::Time current_time = ros::Time::now();
-
         /****************************
         * Update the internal odometry state
         ****************************/
-        Twist2D twist_vel = odom_diffdrive.getTwist(joint_msg.position[0], joint_msg.position[1]);
-        odom_diffdrive(joint_msg.position[0], joint_msg.position[1]);
-
+        ROS_INFO("yellow");
+        // Twist2D twist_vel = odom_diffdrive.getTwist(joint_msg.position[0], joint_msg.position[1]);
+        odom_diffdrive(joint_msg->position[0], joint_msg->position[1]);
+        ROS_INFO("blue");
         /****************************
         * Create a quaternion created from yaw
         ****************************/
         geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
-
         /****************************
         * Publish the transform over tf
         ****************************/
@@ -136,9 +135,9 @@ int main(int argc, char* argv[])
         odom_msg.pose.pose.orientation = odom_quat;
 
         odom_msg.child_frame_id = body_frame_id;
-        odom_msg.twist.twist.linear.x = twist_vel.dx;
-        odom_msg.twist.twist.linear.y = twist_vel.dy;
-        odom_msg.twist.twist.linear.z = twist_vel.dth;
+        odom_msg.twist.twist.linear.x = joint_msg.velocity[0];
+        odom_msg.twist.twist.linear.y = joint_msg.velocity[1];
+        odom_msg.twist.twist.linear.z = joint_msg.velocity[2];
 
         odom_pub.publish(odom_msg);
         loop_rate.sleep();

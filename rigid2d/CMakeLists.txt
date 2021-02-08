@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   nav_msgs
   roscpp
+  sensor_msgs
   std_msgs
   tf
 )
@@ -72,6 +73,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
 DEPENDENCIES
+sensor_msgs
 std_msgs
 )
 
@@ -106,8 +108,8 @@ std_msgs
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES rigid2d
-   CATKIN_DEPENDS message_runtime roscpp std_msgs
+#  LIBRARIES ${PROJECT_NAME} diff_drive
+   CATKIN_DEPENDS message_runtime roscpp sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
@@ -124,14 +126,18 @@ include
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/diff_drive.cpp
-  src/rigid2d.cpp
+   src/diff_drive.cpp
+   src/${PROJECT_NAME}.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_include_directories(${PROJECT_NAME} PUBLIC include/)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_options(${PROJECT_NAME} PUBLIC -Wall -Wextra)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -155,8 +161,9 @@ add_dependencies(fake_turtle ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 # target_link_libraries(${PROJECT_NAME}_main
 #  ${PROJECT_NAME}
 # )
-target_link_libraries(odometer ${catkin_LIBRARIES} rigid2d)
-target_link_libraries(fake_turtle ${catkin_LIBRARIES} rigid2d)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(odometer ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(fake_turtle ${catkin_LIBRARIES} ${PROJECT_NAME})
 
 #############
 ## Install ##
@@ -174,24 +181,24 @@ target_link_libraries(fake_turtle ${catkin_LIBRARIES} rigid2d)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS fake_turtle odometer
+install(TARGETS fake_turtle odometer ${PROJECT_NAME}
 RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-# install(TARGETS ${PROJECT_NAME}
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-# )
+install(TARGETS ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+)
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
@@ -212,3 +219,6 @@ RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+catch_add_test(${PROJECT_NAME}_test tests/tests.cpp)
+target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PROJECT_NAME})

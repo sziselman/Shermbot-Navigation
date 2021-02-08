@@ -95,6 +95,10 @@ int main(int argc, char* argv[])
     joint_msg.position.push_back(0.0);
     joint_msg.position.push_back(0.0);
 
+    joint_msg.velocity.push_back(0.0);
+    joint_msg.velocity.push_back(0.0);
+    joint_msg.velocity.push_back(0.0);
+
     pub.publish(joint_msg);
 
     while (ros::ok())
@@ -122,10 +126,10 @@ int main(int argc, char* argv[])
         joint_msg.position[0] += wheelVelocities.uL;
         joint_msg.position[1] += wheelVelocities.uR;
 
-        joint_msg.velocity[0] = desiredTwist.dth;
-        joint_msg.velocity[1] = desiredTwist.dx;
-        joint_msg.velocity[2] = desiredTwist.dy;
-        
+        joint_msg.velocity[0] = twist_msg.linear.x;
+        joint_msg.velocity[1] = twist_msg.linear.y;
+        joint_msg.velocity[2] = twist_msg.angular.z;
+
         fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
         
         pub.publish(joint_msg);
