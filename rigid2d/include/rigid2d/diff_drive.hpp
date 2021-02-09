@@ -28,6 +28,9 @@ namespace rigid2d
             double thL;
             double thR;
         public:
+            /// \brief creates an empty Differential Drive object
+            DiffDrive();
+            
             /// \brief create a Differential Drive object
             /// \param wheelBase;
             /// \param wheelRad;

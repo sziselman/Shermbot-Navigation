@@ -10,6 +10,7 @@ project(rigid2d)
 find_package(catkin REQUIRED COMPONENTS
   catch_ros
   message_generation
+  message_runtime
   nav_msgs
   roscpp
   sensor_msgs

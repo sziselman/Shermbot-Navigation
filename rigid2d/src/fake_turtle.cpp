@@ -17,21 +17,16 @@
 #include <string>
 #include <iostream>
 
-static const double PI = 3.14159265359;
-
 /****************************
-* Initializing global publisher, subscriber, services, clients, etc.
+* Declaring global variables
 ****************************/
-
-// static ros::Publisher left_pub;
-// static ros::Publisher right_pub;
-// static ros::Subscriber fake_turtle_sub;
 static geometry_msgs::Twist twist_msg;
+static const double PI = 3.14159265359;
 
 /****************************
 * Declare helper functions
 ****************************/
-void twistCallback(const geometry_msgs::Twist & msg);
+void twistCallback(const geometry_msgs::Twist msg);
 
 /****************************
 * Main Function
@@ -49,20 +44,14 @@ int main(int argc, char* argv[])
     /**********************
     * Initialize local variables
     **********************/
-    int frequency = 100;
+    int frequency = 1;
     double wheelBase, wheelRad;
-    double x_i = 0;
-    double y_i = 0;
-    double th_i = 0;
-    double left_i = 0;
-    double right_i = 0;
 
     std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
 
     sensor_msgs::JointState joint_msg;
     // geometry_msgs::Twist twist_msg;
 
-    Twist2D desiredTwist;
     wheelVel wheelVelocities;
 
     /**********************
@@ -78,7 +67,7 @@ int main(int argc, char* argv[])
     /**********************
     * Define publisher, subscriber, service and clients
     **********************/
-    ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
+    ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency, 10000);
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);
 
     ros::Rate loop_rate(frequency);
@@ -87,17 +76,13 @@ int main(int argc, char* argv[])
     * Set initial parameters of the differential drive robot to 0
     * Set the initial position of the left and right wheel
     **********************/
-    DiffDrive fakeTurtle = DiffDrive(wheelBase, wheelRad, x_i, y_i, th_i, left_i, right_i);
+    DiffDrive fakeTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     joint_msg.name.push_back(left_wheel_joint);
     joint_msg.name.push_back(right_wheel_joint);
 
     joint_msg.position.push_back(0.0);
     joint_msg.position.push_back(0.0);
-
-    joint_msg.velocity.push_back(0.0);
-    joint_msg.velocity.push_back(0.0);
-    joint_msg.velocity.push_back(0.0);
 
     pub.publish(joint_msg);
 
@@ -110,6 +95,7 @@ int main(int argc, char* argv[])
         /**********************
         * Create the desired twist based on the twist message
         **********************/
+        Twist2D desiredTwist;
         desiredTwist.dth = twist_msg.angular.z;
         desiredTwist.dx = twist_msg.linear.x;
         desiredTwist.dy = twist_msg.linear.y;
@@ -122,23 +108,27 @@ int main(int argc, char* argv[])
         /**********************
         * Populate the sensor messages
         **********************/
-        joint_msg.header.stamp = ros::Time::now();
+        joint_msg.header.stamp = current_time;
+        joint_msg.header.frame_id = odom_frame_id;
+
         joint_msg.position[0] += wheelVelocities.uL;
         joint_msg.position[1] += wheelVelocities.uR;
 
-        joint_msg.velocity[0] = twist_msg.linear.x;
-        joint_msg.velocity[1] = twist_msg.linear.y;
-        joint_msg.velocity[2] = twist_msg.angular.z;
+        ROS_INFO("wheel angle is: %f\n", joint_msg.position[0]);
+        joint_msg.position[0] = normalize_angle(joint_msg.position[0]);
+        ROS_INFO("normalized wheel angle is: %f\n", joint_msg.position[0]);
 
         fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
         
         pub.publish(joint_msg);
+        loop_rate.sleep();
     }
     return 0;
 }
 
-void twistCallback(const geometry_msgs::Twist & msg)
+void twistCallback(const geometry_msgs::Twist msg)
 {
     twist_msg = msg;
+    return;
 }
 
