@@ -90,7 +90,7 @@ void jointStateCallback(const sensor_msgs::JointState msg)
 {
     using namespace rigid2d;
     
-    ROS_INFO("callback received");
+    ROS_INFO_STREAM(odom_frame_id);
 
     tf::TransformBroadcaster odom_broadcaster;
     nav_msgs::Odometry odom_msg;
@@ -129,7 +129,6 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     ***********************/
     odom_msg.header.stamp = current_time;
     odom_msg.header.frame_id = odom_frame_id;
-
     odom_msg.pose.pose.position.x = odom_diffdrive.getX();
     odom_msg.pose.pose.position.y = odom_diffdrive.getY();
     odom_msg.pose.pose.position.z = 0.0;
