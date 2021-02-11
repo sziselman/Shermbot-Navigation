@@ -13,12 +13,20 @@
 /// SERVICES:
 
 #include <ros/ros.h>
+
 #include <rigid2d/set_pose.h>
+
 #include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <sensor_msgs/JointState.h>
+
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
+
 #include <string>
 #include <iostream>
 
@@ -89,11 +97,10 @@ int main(int argc, char* argv[])
 void jointStateCallback(const sensor_msgs::JointState msg)
 {
     using namespace rigid2d;
-    
-    ROS_INFO_STREAM(odom_frame_id);
 
-    tf::TransformBroadcaster odom_broadcaster;
-    nav_msgs::Odometry odom_msg;
+    ROS_INFO("joint message received!");
+
+    tf2_ros::TransformBroadcaster odom_broadcaster;
 
     ros::Time current_time = ros::Time::now();
 
@@ -103,11 +110,19 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     Twist2D twist_vel = odom_diffdrive.getTwist(msg.position[0], msg.position[1]);
 
     odom_diffdrive(msg.position[0], msg.position[1]);
+    
+    ROS_INFO("x position is: %f\n", odom_diffdrive.getX());
+    ROS_INFO("y position is: %f\n", odom_diffdrive.getY());
+    ROS_INFO("angle is: %f\n", odom_diffdrive.getTh());
 
     /***********************
     * Create a quaternion from yaw
     ***********************/
-    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
+    // geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
+    tf2::Quaternion odom_quater;
+    odom_quater.setRPY(0, 0, odom_diffdrive.getTh());
+
+    geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
 
     /***********************
     * Publish the transform over tf
@@ -127,6 +142,7 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     /***********************
     * Publish the odometry message over ROS
     ***********************/
+    nav_msgs::Odometry odom_msg;
     odom_msg.header.stamp = current_time;
     odom_msg.header.frame_id = odom_frame_id;
     odom_msg.pose.pose.position.x = odom_diffdrive.getX();

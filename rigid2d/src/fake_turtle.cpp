@@ -20,6 +20,8 @@
 /****************************
 * Declaring global variables
 ****************************/
+static rigid2d::DiffDrive fakeTurtle;
+
 static geometry_msgs::Twist twist_msg;
 static const double PI = 3.14159265359;
 
@@ -76,7 +78,8 @@ int main(int argc, char* argv[])
     * Set initial parameters of the differential drive robot to 0
     * Set the initial position of the left and right wheel
     **********************/
-    DiffDrive fakeTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
+    // DiffDrive fakeTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
+    fakeTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     joint_msg.name.push_back(left_wheel_joint);
     joint_msg.name.push_back(right_wheel_joint);
@@ -114,9 +117,7 @@ int main(int argc, char* argv[])
         joint_msg.position[0] += wheelVelocities.uL;
         joint_msg.position[1] += wheelVelocities.uR;
 
-        ROS_INFO("wheel angle is: %f\n", joint_msg.position[0]);
         joint_msg.position[0] = normalize_angle(joint_msg.position[0]);
-        ROS_INFO("normalized wheel angle is: %f\n", joint_msg.position[0]);
 
         fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
         

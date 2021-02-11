@@ -1,4 +1,5 @@
 #include "rigid2d/diff_drive.hpp"
+#include "rigid2d/rigid2d.hpp"
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -90,7 +91,7 @@ namespace rigid2d
         double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
         double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
         double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
-        twist.dth = delTh;
+        twist.dth = normalize_angle(delTh);
         twist.dx = delX;
         twist.dy = delY;
         return twist;
