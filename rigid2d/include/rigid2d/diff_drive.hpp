@@ -75,12 +75,7 @@ namespace rigid2d
             /// \brief converts a desired twist to equivalent wheel velocities
             /// \param tw - the desired twist (body frame)
             /// \return wheel velocities
-            wheelVel convertTwistB(const Twist2D & tw);
-
-            /// \brief converts a desired twist to equivalent wheel velocities
-            /// \param tw - the desired twist (world frame)
-            /// \return wheel velocities
-            wheelVel convertTwistW(const Twist2D & tw);
+            wheelVel convertTwist(const Twist2D & tw);
 
             /// \brief gets the twist associated with new wheel angles
             /// \param thLnew - the new left wheel angle

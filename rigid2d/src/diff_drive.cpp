@@ -63,25 +63,17 @@ namespace rigid2d
         return thR;
     }
 
-    wheelVel DiffDrive::convertTwistB(const Twist2D & tw)
+    wheelVel DiffDrive::convertTwist(const Twist2D & tw)
     {
         wheelVel u;
         double d = wheelBase / 2;
         double r = wheelRad;
 
-        u.uR = (tw.dx / r) - ((tw.dy / r) * tan(th)) + (d * tw.dth / r);
-        u.uL = u.uR - ((2 * d / r) * tw.dth);
-        return u;
-    }
+        double omg = tw.dth;
+        double vbx = (tw.dx * cos(th)) + (tw.dy * sin(th));
 
-    wheelVel DiffDrive::convertTwistW(const Twist2D & tw)
-    {
-        wheelVel u;
-        double d = wheelBase / 2;
-        double r = wheelRad;
-
-        u.uR = (tw.dx + (d * tw.dth * cos(th))) / (r * cos(th));
-        u.uL = u.uR - ((2 * d / r) * tw.dth);
+        u.uR = (-(d / r) * omg) + (vbx / r);
+        u.uL = ((d / r) * omg) + (vbx / r);
         return u;
     }
 
@@ -91,7 +83,7 @@ namespace rigid2d
         double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
         double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
         double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
-        twist.dth = normalize_angle(delTh);
+        twist.dth = delTh;
         twist.dx = delX;
         twist.dy = delY;
         return twist;
@@ -102,6 +94,7 @@ namespace rigid2d
         double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
         double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
         th += delTh;
+        th = normalize_angle(th);
         x += delX;
         y += delY;
         thL = thLnew;
