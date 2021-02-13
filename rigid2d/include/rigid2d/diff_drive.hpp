@@ -28,7 +28,7 @@ namespace rigid2d
             double thL;
             double thR;
         public:
-            /// \brief creates an empty Differential Drive object
+            /// \brief create a Differential Drive object with all values equal to 0.0
             DiffDrive();
             
             /// \brief create a Differential Drive object

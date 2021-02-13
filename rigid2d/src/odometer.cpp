@@ -90,8 +90,6 @@ int main(int argc, char* argv[])
     ****************************/
     odom_diffdrive = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    ROS_INFO("Hello");
-
     while (ros::ok())
     {
         ros::spinOnce();
@@ -119,18 +117,14 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     Twist2D twist_vel = odom_diffdrive.getTwist(msg.position[0], msg.position[1]);
 
     odom_diffdrive(msg.position[0], msg.position[1]);
-    
-    ROS_INFO("x position is: %f\n", odom_diffdrive.getX());
-    ROS_INFO("y position is: %f\n", odom_diffdrive.getY());
-    ROS_INFO("angle is: %f\n", odom_diffdrive.getTh());
 
     /***********************
     * Create a quaternion from yaw
     ***********************/
     // geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
     tf2::Quaternion odom_quater;
-    // odom_quater.setRPY(0, 0, odom_diffdrive.getTh());
-    odom_quater.setRPY(0, 0, 1);
+    odom_quater.setRPY(0, 0, odom_diffdrive.getTh());
+    // odom_quater.setRPY(0, 0, 1);
 
     geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
 

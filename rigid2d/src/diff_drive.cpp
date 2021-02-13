@@ -8,13 +8,13 @@ namespace rigid2d
 {
     DiffDrive::DiffDrive()
     {
-        wheelBase = 0;
-        wheelRad = 0;
-        x = 0;
-        y = 0;
-        th = 0;
-        thL = 0;
-        thR = 0;
+        wheelBase = 0.0;
+        wheelRad = 0.0;
+        x = 0.0;
+        y = 0.0;
+        th = 0.0;
+        thL = 0.0;
+        thR = 0.0;
     }
 
     DiffDrive::DiffDrive(double base, double rad, double xx, double yy, double theta, double left, double right)
@@ -79,24 +79,64 @@ namespace rigid2d
 
     Twist2D DiffDrive::getTwist(double thLnew, double thRnew)
     {
-        Twist2D twist;
-        double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
-        double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
-        double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
-        twist.dth = delTh;
-        twist.dx = delX;
-        twist.dy = delY;
-        return twist;
+        // Find change in wheel angles
+        double dUL = thLnew - thL;
+        double dUR = thRnew - thR;
+
+        // Calculate the twist Vb
+        Twist2D twistb;
+        twistb.dth = (wheelRad / wheelBase) * (dUR - dUL);
+        twistb.dx = (wheelRad / 2) * (dUL + dUR);
+        twistb.dy = 0.0;
+
+        // Integrate twist to get Tbb'
+        Transform2D Tbb = integrateTwist(twistb);
+
+        // get displacement in the body frame 
+        Twist2D dqb;
+        dqb.dth = acos(Tbb.getCosTh());
+        dqb.dx = Tbb.getX();
+        dqb.dy = Tbb.getY();
+
+        // get adjoint A(theta, 0, 0)
+        Transform2D adj = Transform2D(th);
+
+        // Convert twist to desired displacement
+        Twist2D dq = adj(dqb);
+
+        return dq;
     }
     DiffDrive & DiffDrive::operator()(double thLnew, double thRnew)
     {
-        double delTh = (wheelRad / wheelBase) * ((thRnew - thR) - (thLnew - thL));
-        double delX = (wheelRad / 2) * cos(th) * ((thLnew - thL) + (thRnew - thR));
-        double delY = (wheelRad / 2) * sin(th) * ((thLnew - thL) + (thRnew - thR));
-        th += delTh;
-        th = normalize_angle(th);
-        x += delX;
-        y += delY;
+        // Find change in wheel angles
+        double dUL = thLnew - thL;
+        double dUR = thRnew - thR;
+
+        // Calculate twist Vb
+        Twist2D twistb;
+        twistb.dth = (wheelRad / wheelBase) * (dUR - dUL);
+        twistb.dx = (wheelRad / 2) * (dUL + dUR);
+        twistb.dy = 0.0;
+
+        // Integrate twist to get Tbb'
+        Transform2D Tbb = integrateTwist(twistb);
+
+        // Get displacement in the body frame
+        Twist2D dqb;
+        dqb.dth = acos(Tbb.getCosTh());
+        dqb.dx = Tbb.getX();
+        dqb.dy = Tbb.getY();
+
+        // get adjoint A(theta, 0, 0)
+        Transform2D adj = Transform2D(th);
+
+        // Convert twist to desired displacement
+        Twist2D dq = adj(dqb);
+        
+        // Update the configuration of the robot
+        th += dq.dth;
+        x += dq.dx;
+        y += dq.dy;
         thL = thLnew;
         thR = thRnew;
         return *this;
