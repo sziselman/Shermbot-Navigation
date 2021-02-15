@@ -24,10 +24,13 @@
 /******************
 * Declare global variables
 ******************/
-ros::Publisher wheelCom_pub;
-ros::Publisher jointState_pub;
+static ros::Publisher wheelCom_pub;
+static ros::Publisher jointState_pub;
 
-rigid2d::DiffDrive ninjaTurtle;
+static rigid2d::DiffDrive ninjaTurtle;
+
+static geometry_msgs::Twist twist_msg;
+static nuturtlebot::SensorData sensor_data;
 
 /******************
 * Helper Functions
@@ -51,6 +54,9 @@ int main(argc, char* argv[])
     int frequency = 100;
     double wheelRad = n.getParam("wheel_radius", wheelRad);
     double wheelBase = n.getParam("wheel_base", wheelBase);
+    std::string left_wheel_joint = n.getParam("left_wheel_joint", left_wheel_joint);
+    std::string right_wheel_joint = n.getParam("right_wheel_joint", right_wheel_joint);
+    sensor_msgs::JointState joint_msg;
 
     /**********************
     * Define publisher, subscriber, services and clients
@@ -68,14 +74,95 @@ int main(argc, char* argv[])
     *********************/
     ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
+
+    joint_msg.name.push_back(left_wheel_joint);
+    joint_msg.name.push_back(right_wheel_joint);
+
+    joint_msg.position.push_back(0.0);
+    joint_msg.position.push_back(0.0);
+
+    joint_msg.velocity.push_back(0.0);
+    joint_msg.velocity.push_back(0.0);
+    
+    jointState_pub.publish(joint_msg);
+
     while (ros::ok())
     {
         ros::spinOnce();
+        ros::Time current_time = ros::Time::now();
+
+        /********************
+        * Get desird twist from twist message
+        ********************/
+        Twist2D desiredTwist;
+        desiredTwist.dth = twist_msg.angular.z;
+        desiredTwist.dx = twist_msg.angular.x;
+        desiredTwist.dy = twist_msg.angular.y;
+
+        /********************
+        * Read the encoder data to update robot config based on current wheel angles
+        ********************/
+        ninjaTurtle(sensor_data.left_encoder, sensor_data.right_encoder);
+
+        /********************
+        * Get wheel velocities required to achieve desired twist
+        ********************/
+        wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
+        
+        // Checks to make sure wheel velocities do not exceed maximum
+        if (wheelVel.uL > 0.22)
+        {
+            wheelVel.uL = 0.22;
+        } else if (wheelVel.uL < -0.22)
+        {
+            wheelVel.uL = -0.22;
+        }
+
+        if (wheelVel.uR > 0.22)
+        {
+            wheelVel.uL = 0.22;
+        } else if (wheelVel.uR < -0.22)
+        {
+            wheelVel.uR = -0.22;
+        }
+
+        /********************
+        * Update configuration of the diff drive robot
+        ********************/
+        double thLnew = ninjaTurtle.thL += uL;
+        double thRnew = ninjaTurtle.thR += uR;
+
+        ninjaTurtle(thLnew, thRnew);
+
+        /********************
+        * publish wheel_cmd message
+        ********************/
+        nuturtlebot::wheelCommands wheelCom_msg;
+        // converts the velocity to an integer value between -256 and 256 proportional to max rotational velocity
+        int leftCommand = wheelVel.uL * (0.22/256);
+        int rightCommand = wheelVel.uR * (0.22/256);
+
+        wheelCom_msg.left_velocity = leftCommand;
+        wheelCom_msg.right_velocity = rightCommand;
+        wheelCom_pub.publish(wheelCom_msg);
+
+        /******************
+        * publish joint_states message
+        ******************/
+        joint_msg.header.stamp = current_time;
+        joint_msg.header.frame_id = odom_frame_id;
+
+        joint_msg.position[0] = ninjaTurtle.thL;
+        joint_msg.position[1] = ninjaTurtle.thR;
+
+        joint_msg.velocity[0] = velocities.uL;
+        joint_msg.velocity[1] = velocities.uR;
+
+        jointState_pub.publish(joint_msg);
+
         loop_rate.sleep();
     }
     return 0;
-
-    while
 }
 
 /// \brief twistCallback function
@@ -84,56 +171,8 @@ int main(argc, char* argv[])
 /// that makes the robot follow that twist
 void twistCallback(const geometry_msgs::Twist msg)
 {
-    using namespace rigid2d;
-
     ROS_INFO("inside twist callback function");
-
-    /********************
-    * Convert twist to wheel velocities
-    ********************/
-    Twist2D desiredTwist;
-    desiredTwist.dth = msg.angular.z;
-    desiredTwist.dx = msg.linear.x;
-    desiredTwist.dy = msg.linear.y
-    
-    wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
-
-    // Checks to make sure wheel velocities do not exceed maximum
-    if (wheelVel.uL > 0.22)
-    {
-        wheelVel.uL = 0.22;
-    } else if (wheelVel.uL < -0.22)
-    {
-        wheelVel.uL = -0.22;
-    }
-
-    if (wheelVel.uR > 0.22)
-    {
-        wheelVel.uL = 0.22;
-    } else if (wheelVel.uR < -0.22)
-    {
-        wheelVel.uR = -0.22;
-    }
-
-    /********************
-    * Update configuration of the diff drive robot
-    ********************/
-    double thLnew = ninjaTurtle.thL += uL;
-    double thRnew = ninjaTurtle.thR += uR;
-
-    ninjaTurtle(thLnew, thRnew);
-
-    /********************
-    * publish wheel_cmd message
-    ********************/
-    nuturtlebot::wheelCommands wheelCom_msg;
-    // converts the velocity to an integer value between -256 and 256 proportional to max rotational velocity
-    int leftCommand = wheelVel.uL * (0.22/256);
-    int rightCommand = wheelVel.uR * (0.22/256);
-
-    wheelCom_msg.left_velocity = leftCommand;
-    wheelCom_msg.right_velocity = rightCommand;
-    wheelCom_pub.publish(wheelCom_msg);
+    twist_msg = msg;
 }
 
 /// \brief sensorCallback function
@@ -144,10 +183,5 @@ void twistCallback(const geometry_msgs::Twist msg)
 void sensorCallback(const nuturtlebot::SensorData data)
 {
     ROS_INFO("inside sensor callback function");
-
-    /******************
-    * publish joint_states message
-    ******************/
-    sensor_msgs::JointState joint_msg;
-    jointState_pub.publish(joint_msg);
+    sensor_data = data;
 }

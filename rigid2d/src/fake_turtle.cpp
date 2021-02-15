@@ -126,6 +126,8 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+/// \brief twistCallback function
+/// \param msg a geometry twist message
 void twistCallback(const geometry_msgs::Twist msg)
 {
     twist_msg = msg;
