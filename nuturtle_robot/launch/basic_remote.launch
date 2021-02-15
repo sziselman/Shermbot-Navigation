@@ -1,2 +1,14 @@
 <launch>
+    <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
+
+    <machine name="turtlebot" address="$(arg robot)" env-loader="/home/ubuntu/loader.sh" user="ubuntu"/>
+    
+    <node machine="turtlebot" name="serial_node" pkg="rosserial_python" type="serial_node.py">
+        <param name="port" value="/dev/ttyACM0"/>
+        <param name="baud" value="115200"/>
+    </node>
+
+    <param name="wheel_base" type="double" value="0.033"/>
+    <param name="wheel_radius" type="double" value="0.16"/>
+    
 </launch>

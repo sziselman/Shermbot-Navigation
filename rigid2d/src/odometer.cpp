@@ -8,9 +8,9 @@
 ///     body_frame_id   : The name of the body tf frame
 ///     left_wheel_joint    : The name of the left wheel joint
 ///     right_wheel_joint   : The name of the right wheel joint
-/// PUBLISHES:
-/// SUBSCRIBES:
-/// SERVICES:
+/// PUBLISHES: odom (nav_msgs/Odometry)
+/// SUBSCRIBES: joint_states (sensor_msgs/JointState)
+/// SERVICES: set_pose : Sets the pose of the turtlebot's configuration
 
 #include <ros/ros.h>
 
@@ -124,7 +124,6 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     // geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
     tf2::Quaternion odom_quater;
     odom_quater.setRPY(0, 0, odom_diffdrive.getTh());
-    // odom_quater.setRPY(0, 0, 1);
 
     geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
 
