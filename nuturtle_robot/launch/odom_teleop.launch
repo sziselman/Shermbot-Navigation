@@ -1,4 +1,15 @@
 <launch>
+    <arg name="use_rvzi" default="true" doc="Controls whether rviz is launhced-- default true"/>
+
     <arg name="circle" doc="true launches follow_circle node, false launches turtlebot3_teleop_key node"/>
     
+    <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_keyboard" output="screen"/>
+    <node pkg="nuturtle_robot" name="follow_circle" type="follow_circle" output="screen">
+        <param name="radius" type="double" value="1.0"/>
+        <param name="speed" type="double" value="0.5"/>
+    </node>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
+
+    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz" type="rviz"/>
 </launch>

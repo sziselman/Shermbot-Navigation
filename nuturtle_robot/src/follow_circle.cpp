@@ -11,12 +11,24 @@
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
 
+static double radius;
+static double speed;
+
+static ros::Publisher wheelCommand_pub;
 int main(int argc, char* argv[])
 {
+    /****************
+     * Initialize node & node handler
+    ****************/
     ros::init(argc, argv, "follow_circle");
     ros::NodeHandle n;
 
+    /****************
+     * Define variables
+    ****************/
     int frequency = 100;
+    n.getParam("radius", radius);
+    n.getParam("speed", speed);
 
     ros::Rate loop_rate(frequency);
     while (ros::ok())
