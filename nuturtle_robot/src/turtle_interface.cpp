@@ -104,8 +104,8 @@ int main(int argc, char* argv[])
         ********************/
         Twist2D desiredTwist;
         desiredTwist.dth = twist_msg.angular.z;
-        desiredTwist.dx = twist_msg.angular.x;
-        desiredTwist.dy = twist_msg.angular.y;
+        desiredTwist.dx = twist_msg.linear.x;
+        desiredTwist.dy = twist_msg.linear.y;
 
         /********************
         * Read the encoder data to update robot config based on current wheel angles
@@ -136,7 +136,6 @@ int main(int argc, char* argv[])
         {
             velocities.uR = -maxAngVel;
         }
-
         /********************
         * Update configuration of the diff drive robot
         ********************/
