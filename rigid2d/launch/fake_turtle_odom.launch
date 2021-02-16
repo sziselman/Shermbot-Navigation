@@ -12,8 +12,8 @@
     <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz" type="rviz"/>
 
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
-    <param name="wheel_base" type="double" value="0.033"/>
-    <param name="wheel_radius" type="double" value="0.16"/>
+    <param name="wheel_base" type="double" value="0.16"/>
+    <param name="wheel_radius" type="double" value="0.033"/>
     <param name="odom_frame_id" type="string" value="odom"/>
     <param name="body_frame_id" type="string" value="base_link"/>
     <param name="left_wheel_joint" type="string" value="wheel_left_joint"/>

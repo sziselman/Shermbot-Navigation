@@ -110,7 +110,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nuturtle_robot
-   CATKIN_DEPENDS message_runtime rigid2d nuturtlebot roscpp sensor_msgs std_msgs
+   CATKIN_DEPENDS message_runtime nuturtlebot rigid2d roscpp sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
@@ -222,9 +222,9 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 # catkin_add_nosetests(test)
 
 # catch_add_rostest_node(${PROJECT_NAME}_test test/turtle_interface_test.cpp)
-# if (CATKIN_ENABLE_TESTING)
-#   find_package(REQUIRED rostest)
-#   catch_add_rostest_node(turtle_interface_test test/turtle_interface_test.cpp)
-#   target_link_libraries(turtle_interface_test ${catkin_LIBRARIES} ${rigid2d_LIBRARIES})
-#   add_rostest(test/turtle_interface_test.test)
-# endif()
+if (CATKIN_ENABLE_TESTING)
+  find_package(rostest)
+  catch_add_rostest_node(turtle_interface_test test/turtle_interface_test.cpp)
+  target_link_libraries(turtle_interface_test ${catkin_LIBRARIES} ${rigid2d_LIBRARIES})
+  add_rostest(test/turtle_interface_test.test)
+endif()

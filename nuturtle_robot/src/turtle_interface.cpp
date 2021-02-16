@@ -52,15 +52,17 @@ int main(int argc, char* argv[])
     * Define local variables
     **********************/
     int frequency = 100;
-    double maxAngVel = 57;
-    double wheelRad = n.getParam("wheel_radius", wheelRad);
-    double wheelBase = n.getParam("wheel_base", wheelBase);
-    std::string left_wheel_joint;
-    n.getParam("left_wheel_joint", left_wheel_joint);
-    std::string right_wheel_joint;
-    n.getParam("right_wheel_joint", right_wheel_joint);
-    std::string odom_frame_id;
-    n.getParam("odom_frame_id", odom_frame_id);
+    double maxAngVel = 5.97; // rad/s
+    // double wheelRad = n.getParam("wheel_radius", wheelRad);
+    double wheelRad = 0.033;
+    // double wheelBase = n.getParam("wheel_base", wheelBase);
+    double wheelBase = 0.16;
+    std::string left_wheel_joint = "left_wheel_joint";
+    // n.getParam("left_wheel_joint", left_wheel_joint);
+    std::string right_wheel_joint = "right_wheel_joint";
+    // n.getParam("right_wheel_joint", right_wheel_joint);
+    std::string odom_frame_id = "odom_frame_id";
+    // n.getParam("odom_frame_id", odom_frame_id);
 
     sensor_msgs::JointState joint_msg;
 
