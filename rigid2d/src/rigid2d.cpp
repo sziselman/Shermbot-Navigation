@@ -210,9 +210,9 @@ namespace rigid2d
 
     Transform2D & Transform2D::operator*=(const Transform2D & rhs)
     {
-        double mat_00 = (costh * rhs.costh) + (-sinth * rhs.sinth);
+        double mat_00 = (costh * rhs.costh) - (sinth * rhs.sinth);
         double mat_10 = (sinth * rhs.costh) + (costh * rhs.sinth);
-        double mat_02 = (costh * rhs.x) + ((-sinth) * rhs.y) + x;
+        double mat_02 = (costh * rhs.x) - (sinth * rhs.y) + x;
         double mat_12 = (sinth * rhs.x) + (costh * rhs.y) + y;
         costh = mat_00;
         sinth = mat_10;

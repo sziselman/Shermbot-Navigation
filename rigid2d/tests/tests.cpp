@@ -195,40 +195,52 @@ TEST_CASE("Change twist reference frame", "[transform]"){ // Sarah, Ziselman
 	REQUIRE(almost_equal(twNew.dy, 1));
 }
 
-/// \brief testing function that updates configuration of the diff drive robot
-TEST_CASE("Update robot configuration", "[update configuration]") // Lin, Liu
-{
-    using namespace rigid2d; 
-    double wheelbase = 1;
-    double wheelradius = 1;
+TEST_CASE("Check integrate twist, trans", "[pure translation]"){ // Sarah, Ziselman
+    using namespace rigid2d;
 
-    // move forwards 
-    DiffDrive config1 = DiffDrive(wheelbase, wheelradius, 0.0, 0.0, 0.0, 0.0, 0.0);
+    Twist2D desiredTwist;
+    desiredTwist.dth = 0.0;
+    desiredTwist.dx = 1.0;
+    desiredTwist.dy = 2.0;
 
-    double leftWheelNew = 0.1;
-    double rightWheelNew = 0.1;
-    config1(leftWheelNew, rightWheelNew);
+    Transform2D tr = integrateTwist(desiredTwist);
 
-    // dd.updateConfig(newpose1);
+    REQUIRE(almost_equal(tr.getCosTh(), 1));
+    REQUIRE(almost_equal(tr.getSinTh(), 0));
+    REQUIRE(almost_equal(tr.getX(), 1));
+    REQUIRE(almost_equal(tr.getY(), 2));
+}
 
-    // RobotConfig currpose1 = dd.getConfig();
-    REQUIRE(config1.getTh() == Approx(0));
-    REQUIRE(config1.getX() == Approx(0.1));
-    REQUIRE(config1.getY() == Approx(0));
+TEST_CASE("Check integrate twist, rot", "[pure rotation]"){ // Sarah, Ziselman
+    using namespace rigid2d;
 
+    Twist2D desiredTwist;
+    desiredTwist.dth = PI/2;
+    desiredTwist.dx = 0.0;
+    desiredTwist.dy = 0.0;
 
-    // move forwards 
-    DiffDrive config2 = DiffDrive(wheelbase, wheelradius, config1.getX(), config1.getY(), config1.getTh(), config1.getThL(), config1.getThR());
-    
-    double leftNew2 = 1.7;
-    double rightNew2 = 1.3;
+    Transform2D tr = integrateTwist(desiredTwist);
 
-    config2(leftNew2, rightNew2);
+    REQUIRE(almost_equal(tr.getCosTh(), 0));
+    REQUIRE(almost_equal(tr.getSinTh(), 1));
+    REQUIRE(almost_equal(tr.getX(), 0));
+    REQUIRE(almost_equal(tr.getY(), 0));
+}
 
-    // dd2.updateConfig(newpose2);
+TEST_CASE("Check integrate twist, trans and rot", "[trans and rot]"){ // Sarah, Ziselman
+    using namespace rigid2d;
 
-    REQUIRE(config2.getTh() == Approx(-0.4));
-    REQUIRE(config2.getX() == Approx(1.5));
-    REQUIRE(config2.getY() == Approx(0));
+    Twist2D desiredTwist;
+    desiredTwist.dth = PI/2;
+    desiredTwist.dx = 1.0;
+    desiredTwist.dy = 2.0;
 
+    Transform2D tr = integrateTwist(desiredTwist);
+
+    // printf("%f\n", tr.getX());
+
+    REQUIRE(almost_equal(tr.getCosTh(), 0));
+    REQUIRE(almost_equal(tr.getSinTh(), 1));
+    REQUIRE(almost_equal(tr.getX(), 6/PI));
+    REQUIRE(almost_equal(tr.getY(), 2/PI));
 }

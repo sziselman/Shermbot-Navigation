@@ -224,4 +224,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
 # catkin_add_nosetests(test)
 
 catch_add_test(${PROJECT_NAME}_test tests/tests.cpp)
+catch_add_test(diff_drive_test tests/diff_drive_tests.cpp)
 target_link_libraries(${PROJECT_NAME}_test ${catkin_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(diff_drive_test ${catkin_LIBRARIES} ${PROJECT_NAME})
