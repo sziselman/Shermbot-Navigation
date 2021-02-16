@@ -8,8 +8,8 @@
 /// SERVICES:
 
 #include <ros/ros.h>
-#include <rigid2d/rigid2d.hpp>
-#include <rigid2d/diff_drive.hpp>
+// #include <rigid2d/rigid2d.hpp>
+// #include <rigid2d/diff_drive.hpp>
 
 int main(int argc, char* argv[])
 {

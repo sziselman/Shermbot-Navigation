@@ -8,7 +8,4 @@
         <param name="baud" value="115200"/>
     </node>
 
-    <param name="wheel_base" type="double" value="0.033"/>
-    <param name="wheel_radius" type="double" value="0.16"/>
-    
 </launch>

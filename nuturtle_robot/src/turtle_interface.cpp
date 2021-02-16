@@ -18,8 +18,8 @@
 #include <nuturtlebot/WheelCommands.h>
 #include <nuturtlebot/SensorData.h>
 
-#include <rigid2d/rigid2d.hpp>
-#include <rigid2d/diff_drive.cpp>
+#include "rigid2d/rigid2d.hpp"
+#include "rigid2d/diff_drive.hpp"
 
 /******************
 * Declare global variables
@@ -38,7 +38,7 @@ static nuturtlebot::SensorData sensor_data;
 void twistCallback(const geometry_msgs::Twist msg);
 void sensorCallback(const nuturtlebot::SensorData data);
 
-int main(argc, char* argv[])
+int main(int argc, char* argv[])
 {
     using namespace rigid2d;
 
@@ -52,17 +52,23 @@ int main(argc, char* argv[])
     * Define local variables
     **********************/
     int frequency = 100;
+    double maxAngVel = 57;
     double wheelRad = n.getParam("wheel_radius", wheelRad);
     double wheelBase = n.getParam("wheel_base", wheelBase);
-    std::string left_wheel_joint = n.getParam("left_wheel_joint", left_wheel_joint);
-    std::string right_wheel_joint = n.getParam("right_wheel_joint", right_wheel_joint);
+    std::string left_wheel_joint;
+    n.getParam("left_wheel_joint", left_wheel_joint);
+    std::string right_wheel_joint;
+    n.getParam("right_wheel_joint", right_wheel_joint);
+    std::string odom_frame_id;
+    n.getParam("odom_frame_id", odom_frame_id);
+
     sensor_msgs::JointState joint_msg;
 
     /**********************
     * Define publisher, subscriber, services and clients
     **********************/
     wheelCom_pub = n.advertise<nuturtlebot::WheelCommands>("/wheel_cmd", frequency);
-    jointState_pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);/SensorData.h>
+    jointState_pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
 
     ros::Subscriber twist_sub = n.subscribe("/cmd_vel", frequency, twistCallback);
     ros::Subscriber sensor_sub = n.subscribe("/sensor_data", frequency, sensorCallback);
@@ -102,7 +108,10 @@ int main(argc, char* argv[])
         /********************
         * Read the encoder data to update robot config based on current wheel angles
         ********************/
-        ninjaTurtle(sensor_data.left_encoder, sensor_data.right_encoder);
+        double leftAngle = (2 * PI / 4096) * sensor_data.left_encoder;
+        double rightAngle = (2 * PI / 4096) * sensor_data.right_encoder;
+
+        ninjaTurtle(leftAngle, rightAngle);
 
         /********************
         * Get wheel velocities required to achieve desired twist
@@ -110,37 +119,37 @@ int main(argc, char* argv[])
         wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
         
         // Checks to make sure wheel velocities do not exceed maximum
-        if (wheelVel.uL > 0.22)
+        if (velocities.uL > maxAngVel)
         {
-            wheelVel.uL = 0.22;
-        } else if (wheelVel.uL < -0.22)
+            velocities.uL = maxAngVel;
+        } else if (velocities.uL < -maxAngVel)
         {
-            wheelVel.uL = -0.22;
+            velocities.uL = -maxAngVel;
         }
 
-        if (wheelVel.uR > 0.22)
+        if (velocities.uR > maxAngVel)
         {
-            wheelVel.uL = 0.22;
-        } else if (wheelVel.uR < -0.22)
+            velocities.uL = maxAngVel;
+        } else if (velocities.uR < -maxAngVel)
         {
-            wheelVel.uR = -0.22;
+            velocities.uR = -maxAngVel;
         }
 
         /********************
         * Update configuration of the diff drive robot
         ********************/
-        double thLnew = ninjaTurtle.thL += uL;
-        double thRnew = ninjaTurtle.thR += uR;
+        double thLnew = ninjaTurtle.getThL() + velocities.uL;
+        double thRnew = ninjaTurtle.getThR() + velocities.uR;
 
-        ninjaTurtle(thLnew, thRnew);
+        // ninjaTurtle(thLnew, thRnew);
 
         /********************
         * publish wheel_cmd message
         ********************/
-        nuturtlebot::wheelCommands wheelCom_msg;
+        nuturtlebot::WheelCommands wheelCom_msg;
         // converts the velocity to an integer value between -256 and 256 proportional to max rotational velocity
-        int leftCommand = wheelVel.uL * (0.22/256);
-        int rightCommand = wheelVel.uR * (0.22/256);
+        int leftCommand = velocities.uL * (256/maxAngVel);
+        int rightCommand = velocities.uR * (256/maxAngVel);
 
         wheelCom_msg.left_velocity = leftCommand;
         wheelCom_msg.right_velocity = rightCommand;
@@ -152,8 +161,8 @@ int main(argc, char* argv[])
         joint_msg.header.stamp = current_time;
         joint_msg.header.frame_id = odom_frame_id;
 
-        joint_msg.position[0] = ninjaTurtle.thL;
-        joint_msg.position[1] = ninjaTurtle.thR;
+        joint_msg.position[0] = ninjaTurtle.getThL();
+        joint_msg.position[1] = ninjaTurtle.getThR();
 
         joint_msg.velocity[0] = velocities.uL;
         joint_msg.velocity[1] = velocities.uR;
