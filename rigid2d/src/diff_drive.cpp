@@ -72,8 +72,8 @@ namespace rigid2d
         double omg = tw.dth;
         double vbx = (tw.dx * cos(th)) + (tw.dy * sin(th));
 
-        u.uR = (-(d / r) * omg) + (vbx / r);
-        u.uL = ((d / r) * omg) + (vbx / r);
+        u.uL = (-(d / r) * omg) + (vbx / r);
+        u.uR = ((d / r) * omg) + (vbx / r);
         return u;
     }
 
@@ -94,7 +94,8 @@ namespace rigid2d
 
         // get displacement in the body frame 
         Twist2D dqb;
-        dqb.dth = acos(Tbb.getCosTh());
+
+        dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 
@@ -123,7 +124,8 @@ namespace rigid2d
 
         // Get displacement in the body frame
         Twist2D dqb;
-        dqb.dth = acos(Tbb.getCosTh());
+
+        dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 

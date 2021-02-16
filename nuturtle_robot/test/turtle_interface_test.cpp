@@ -59,36 +59,36 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     }
 }
 
-// TEST_CASE("pure translation", "[pure translation]")
-// {
-//     // this test case publishes a cmd_vel message and
-//     // subscribes to the turtle_interface node to check 
-//     // proper wheel commands
-//     ROS_INFO("TEST 1");
+TEST_CASE("pure translation", "[pure translation]")
+{
+    // this test case publishes a cmd_vel message and
+    // subscribes to the turtle_interface node to check 
+    // proper wheel commands
+    ROS_INFO("TEST 1");
 
-//     ros::NodeHandle n;
-//     int frequency = 100;
+    ros::NodeHandle n;
+    int frequency = 100;
 
-//     const auto cmdVel_pub = n.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
+    const auto cmdVel_pub = n.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
 
-//     const auto wheelCom_sub = n.subscribe("/wheel_cmd", frequency, wheelComCallbackTest1);
+    const auto wheelCom_sub = n.subscribe("/wheel_cmd", frequency, wheelComCallbackTest1);
 
-//     geometry_msgs::Twist twist_msg;
-//     twist_msg.linear.x = 0.1;
-//     twist_msg.linear.y = 0.0;
-//     twist_msg.angular.z = 0.0;
-//     ROS_INFO("linear x is %f\n", twist_msg.linear.x);
+    geometry_msgs::Twist twist_msg;
+    twist_msg.linear.x = 0.1;
+    twist_msg.linear.y = 0.0;
+    twist_msg.angular.z = 0.0;
+    ROS_INFO("linear x is %f\n", twist_msg.linear.x);
 
-//     cmdVel_pub.publish(twist_msg);
+    cmdVel_pub.publish(twist_msg);
 
-//     ros::Rate loop_rate(frequency);
-//     while (ros::ok())
-//     {
-//         ros::spinOnce();
-//         cmdVel_pub.publish(twist_msg);
-//         loop_rate.sleep();
-//     }
-// }
+    ros::Rate loop_rate(frequency);
+    while (ros::ok())
+    {
+        ros::spinOnce();
+        cmdVel_pub.publish(twist_msg);
+        loop_rate.sleep();
+    }
+}
 
 // TEST_CASE("pure rotation", "[pure rotation]")
 // {
