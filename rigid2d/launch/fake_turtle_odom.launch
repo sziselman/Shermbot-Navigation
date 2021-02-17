@@ -3,7 +3,7 @@
 
     <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     
-    <node pkg="rigid2d" output="screen" type="odometer" name="odometer"/>
+    <node pkg="rigid2d" type="odometer" name="odometer" output="screen" />
 
     <node pkg="rigid2d" type="fake_turtle" name="fake_turtle"/>
 
