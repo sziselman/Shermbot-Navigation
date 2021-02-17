@@ -57,82 +57,25 @@ void callback3(const sensor_msgs::JointState msg)
     }
 }
 
-TEST_CASE("pure translation", "[pure translation]")
-{
-    // this test case publishes a cmd_vel message and
-    // subscribes to the turtle_interface node to check 
-    // proper wheel commands
-
-    ros::NodeHandle n1;
-    int frequency = 100;
-
-    const auto pub1 = n1.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
-
-    const auto sub1 = n1.subscribe("/wheel_cmd", frequency, callback1);
-
-    geometry_msgs::Twist twist_msg;
-    twist_msg.linear.x = 0.1;
-    twist_msg.linear.y = 0.0;
-    twist_msg.angular.z = 0.0;
-
-    pub1.publish(twist_msg);
-
-    ros::Rate loop_rate(frequency);
-    for (int i = 0; ros::ok() && i != 200; ++i)
-    {
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
-    n1.shutdown();
-}
-
-TEST_CASE("pure rotation", "[pure rotation]")
-{
-    // this test case publishes a cmd_vel message and
-    // subscribes to the turtle_interface node to check
-    // proper wheel commands
-
-    ros::NodeHandle n2;
-    int frequency = 100;
-
-    const auto pub2 = n2.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
-
-    const auto sub2 = n2.subscribe("/wheel_cmd", frequency, callback2);
-
-    geometry_msgs::Twist twist_msg; 
-    twist_msg.linear.x = 0.0;
-    twist_msg.linear.y = 0.0;
-    twist_msg.angular.z = 1;
-
-    pub2.publish(twist_msg);
-
-    ros::Rate loop_rate(frequency);
-    for (int i = 0; ros::ok() && i != 200; ++i)
-    {
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
-    n2.shutdown();
-}
-
-// TEST_CASE("encoder data", "[encoder data]")
+// TEST_CASE("pure translation", "[pure translation]")
 // {
-//     // this test case publishes encoder data and subscribes to
-//     // the turtle_interface node to check that it converts joint
-//     // states properly
+//     // this test case publishes a cmd_vel message and
+//     // subscribes to the turtle_interface node to check 
+//     // proper wheel commands
 
-//     ros::NodeHandle n3;
+//     ros::NodeHandle n1;
 //     int frequency = 100;
 
-//     const auto pub3 = n3.advertise<nuturtlebot::SensorData>("/sensor_data", frequency, true);
+//     const auto pub1 = n1.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
 
-//     const auto sub3 = n3.subscribe("/joint_states", frequency, callback3);
+//     const auto sub1 = n1.subscribe("/wheel_cmd", frequency, callback1);
 
-//     nuturtlebot::SensorData data;
-//     data.left_encoder = 2000;
-//     data.right_encoder = 1000;
+//     geometry_msgs::Twist twist_msg;
+//     twist_msg.linear.x = 0.1;
+//     twist_msg.linear.y = 0.0;
+//     twist_msg.angular.z = 0.0;
 
-//     pub3.publish(data);
+//     pub1.publish(twist_msg);
 
 //     ros::Rate loop_rate(frequency);
 //     for (int i = 0; ros::ok() && i != 200; ++i)
@@ -140,5 +83,62 @@ TEST_CASE("pure rotation", "[pure rotation]")
 //         ros::spinOnce();
 //         loop_rate.sleep();
 //     }
-//     n3.shutdown();
+//     n1.shutdown();
 // }
+
+// TEST_CASE("pure rotation", "[pure rotation]")
+// {
+//     // this test case publishes a cmd_vel message and
+//     // subscribes to the turtle_interface node to check
+//     // proper wheel commands
+
+//     ros::NodeHandle n2;
+//     int frequency = 100;
+
+//     const auto pub2 = n2.advertise<geometry_msgs::Twist>("/cmd_vel", frequency, true);
+
+//     const auto sub2 = n2.subscribe("/wheel_cmd", frequency, callback2);
+
+//     geometry_msgs::Twist twist_msg; 
+//     twist_msg.linear.x = 0.0;
+//     twist_msg.linear.y = 0.0;
+//     twist_msg.angular.z = 1;
+
+//     pub2.publish(twist_msg);
+
+//     ros::Rate loop_rate(frequency);
+//     for (int i = 0; ros::ok() && i != 200; ++i)
+//     {
+//         ros::spinOnce();
+//         loop_rate.sleep();
+//     }
+//     n2.shutdown();
+// }
+
+TEST_CASE("encoder data", "[encoder data]")
+{
+    // this test case publishes encoder data and subscribes to
+    // the turtle_interface node to check that it converts joint
+    // states properly
+
+    ros::NodeHandle n3;
+    int frequency = 100;
+
+    const auto pub3 = n3.advertise<nuturtlebot::SensorData>("/sensor_data", frequency, true);
+
+    const auto sub3 = n3.subscribe("/joint_states", frequency, callback3);
+
+    nuturtlebot::SensorData data;
+    data.left_encoder = 2000;
+    data.right_encoder = 1000;
+
+    pub3.publish(data);
+
+    ros::Rate loop_rate(frequency);
+    for (int i = 0; ros::ok() && i != 200; ++i)
+    {
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+    n3.shutdown();
+}

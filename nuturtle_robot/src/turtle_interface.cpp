@@ -124,8 +124,6 @@ int main(int argc, char* argv[])
         * Get wheel velocities required to achieve desired twist
         ********************/
         wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
-        ROS_INFO("left wheel velocity is %f\n", velocities.uL);
-        ROS_INFO("right wheel velocity is %f\n", velocities.uR);
         
         // Checks to make sure wheel velocities do not exceed maximum
         if (velocities.uL > maxAngVel)

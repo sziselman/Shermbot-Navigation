@@ -95,7 +95,8 @@ namespace rigid2d
         // get displacement in the body frame 
         Twist2D dqb;
 
-        dqb.dth = asin(Tbb.getSinTh());
+        dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
+        // dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 
@@ -125,7 +126,8 @@ namespace rigid2d
         // Get displacement in the body frame
         Twist2D dqb;
 
-        dqb.dth = asin(Tbb.getSinTh());
+        dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
+        // dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 
