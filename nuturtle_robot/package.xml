@@ -66,9 +66,13 @@
   <exec_depend>rigid2d</exec_depend>
   <exec_depend>nuturtlebot</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>turtlebot3_teleop</exec_depend>
   <exec_depend>rosserial_python</exec_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>rosserial_python</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>nuturtle_description</exec_depend>
   <test_depend>rostest</test_depend>
 
 
