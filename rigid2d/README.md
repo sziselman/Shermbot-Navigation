@@ -1,6 +1,8 @@
 # Rigid 2D Transformation Library
 A library for handling transformations in SE(2)
 
+* An important thing to note is that my DiffDrive tests all pass individually, but don't pass when all ran together. I tried solving the problem by shutting down each node once the test was run, but it did not solve the problem.
+
 # Conceptual Questions
 1. The difference between a class and a struct in C++ is in their members' default visibility. Classes are private, which means you can't access it's members outside the scope of its class. Structs are public, which means you can access it outside of the scope of the struct.
 
