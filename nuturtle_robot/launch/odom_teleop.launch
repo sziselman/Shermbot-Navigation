@@ -1,14 +1,18 @@
 <launch>
-    <arg name="use_rviz" default="true" doc="Controls whether rviz is launhced-- default true"/>
+    <arg name="use_rviz" default="true" doc="Controls whether rviz is launched-- default true"/>
 
-    <arg name="circle" doc="true launches follow_circle node, false launches turtlebot3_teleop_key node"/>
+    <arg name="circle" default="true" doc="true launches follow_circle node, false launches turtlebot3_teleop_key node"/>
     
+    <group if="$(eval circle == 'false')">
     <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+    </group>
     
+    <group if="$(eval circle == 'true')">
     <node pkg="nuturtle_robot" name="follow_circle" type="follow_circle" output="screen">
         <param name="~radius" type="double" value="1.0"/>
         <param name="~speed" type="double" value="0.25"/>
     </node>
+    </group>
 
     <node pkg="rigid2d" name="odometer" type="odometer" output="screen"/>
 

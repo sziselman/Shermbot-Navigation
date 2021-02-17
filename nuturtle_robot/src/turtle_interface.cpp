@@ -5,6 +5,11 @@
 /// velocities.
 ///
 /// PARAMETERS:
+///             wheelRad : the radius of the robot's wheels
+///             wheelBase : the distance between the robot's wheels
+///             left_wheel_joint : the string used in publishing a joint_state message
+///             right_wheel_joint : the string used in publishing a joint_state message
+///             odom_frame_id : the string used in publishing a joint_state message
 /// PUBLISHES:  wheel_cmd (nuturtlebot/WheelCommands)
 ///             joint_states (sensor_msgs/JointState)
 /// SUBSCRIBES: cmd_vel (geometry_msgs/Twist)
@@ -119,6 +124,8 @@ int main(int argc, char* argv[])
         * Get wheel velocities required to achieve desired twist
         ********************/
         wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
+        ROS_INFO("left wheel velocity is %f\n", velocities.uL);
+        ROS_INFO("right wheel velocity is %f\n", velocities.uR);
         
         // Checks to make sure wheel velocities do not exceed maximum
         if (velocities.uL > maxAngVel)

@@ -3,9 +3,15 @@
 /// of a specified radius at a specified speed
 ///
 /// PARAMETERS:
+///         radius : the radius of the circle that the robot drives in
+///         speed : the speed of the robot
+///         wheelBase : the distance between the wheels of the robot
+///         wheelRad : the radius of the robot's wheels
 /// PUBLISHES:
+///         geometry_msgs/Twist : contains the linear x, y and angular z velocities
 /// SUBSCRIBES:
 /// SERVICES:
+///         /control : tells the robot to move in counter-clockwise, clockwise or stop
 
 #include <ros/ros.h>
 #include <nuturtle_robot/control.h>
