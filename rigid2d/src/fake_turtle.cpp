@@ -91,6 +91,8 @@ int main(int argc, char* argv[])
 
     pub.publish(joint_msg);
 
+    ros::Time last_time = ros::Time::now();
+    ros::Time current_time = ros::Time::now();
     while (ros::ok())
     {
         ros::Time current_time = ros::Time::now();
@@ -116,8 +118,11 @@ int main(int argc, char* argv[])
         joint_msg.header.stamp = current_time;
         joint_msg.header.frame_id = odom_frame_id;
 
-        joint_msg.position[0] += wheelVelocities.uL;
-        joint_msg.position[1] += wheelVelocities.uR;
+        // joint_msg.position[0] += wheelVelocities.uL;
+        // joint_msg.position[1] += wheelVelocities.uR;
+
+        joint_msg.position[0] += wheelVelocities.uL * (current_time - last_time).toSec();
+        joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
 
         // joint_msg.position[0] = normalize_angle(joint_msg.position[0]);
         // joint_msg.position[1] = normalize_angle(joint_msg.position[1]);
@@ -125,6 +130,7 @@ int main(int argc, char* argv[])
         fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
         
         pub.publish(joint_msg);
+        last_time = current_time;
         loop_rate.sleep();
     }
     return 0;
