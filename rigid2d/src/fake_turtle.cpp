@@ -3,6 +3,10 @@
 /// using the DiffDrive class
 ///
 /// PARAMETERS:
+///     left_wheel_joint : string used for publishing joint_state_message
+///     right_wheel_joint : string used for publishing joint_state_message
+///     wheelRad : the radius of the robot's wheels
+///     wheelBase : the distance between the robot's wheels
 /// PUBLISHES:
 ///     sensor_msgs/JointState on the joint state topic
 /// SUBSCRIBES:
