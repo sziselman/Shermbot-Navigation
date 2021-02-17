@@ -57,12 +57,12 @@ int main(int argc, char* argv[])
     double wheelRad = 0.033;
     // double wheelBase = n.getParam("wheel_base", wheelBase);
     double wheelBase = 0.16;
-    std::string left_wheel_joint = "left_wheel_joint";
-    // n.getParam("left_wheel_joint", left_wheel_joint);
-    std::string right_wheel_joint = "right_wheel_joint";
-    // n.getParam("right_wheel_joint", right_wheel_joint);
-    std::string odom_frame_id = "odom_frame_id";
-    // n.getParam("odom_frame_id", odom_frame_id);
+    std::string left_wheel_joint;
+    n.getParam("left_wheel_joint", left_wheel_joint);
+    std::string right_wheel_joint;
+    n.getParam("right_wheel_joint", right_wheel_joint);
+    std::string odom_frame_id;
+    n.getParam("odom_frame_id", odom_frame_id);
 
     sensor_msgs::JointState joint_msg;
 
@@ -149,8 +149,8 @@ int main(int argc, char* argv[])
         ********************/
         nuturtlebot::WheelCommands wheelCom_msg;
         // converts the velocity to an integer value between -256 and 256 proportional to max rotational velocity
-        int leftCommand = velocities.uL * (256/maxAngVel);
-        int rightCommand = velocities.uR * (256/maxAngVel);
+        int leftCommand = round(velocities.uL * (256/maxAngVel));
+        int rightCommand = round(velocities.uR * (256/maxAngVel));
 
         wheelCom_msg.left_velocity = leftCommand;
         wheelCom_msg.right_velocity = rightCommand;
@@ -181,7 +181,6 @@ int main(int argc, char* argv[])
 /// that makes the robot follow that twist
 void twistCallback(const geometry_msgs::Twist msg)
 {
-    ROS_INFO("inside twist callback function");
     twist_msg = msg;
 }
 
@@ -192,6 +191,5 @@ void twistCallback(const geometry_msgs::Twist msg)
 /// encoder data
 void sensorCallback(const nuturtlebot::SensorData data)
 {
-    ROS_INFO("inside sensor callback function");
     sensor_data = data;
 }

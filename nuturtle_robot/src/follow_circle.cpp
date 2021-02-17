@@ -12,6 +12,7 @@
 
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
+#include <geometry_msgs/Twist.h>
 
 #include <string>
 
@@ -20,19 +21,38 @@
  * ************/
 static double radius;
 static double speed;
-static int ccw = true;
+static double wheelBase;
+static double wheelRad;
+
+/***************
+ * Initialize global publisher, subscriber, services and clients
+ * ************/
 static ros::ServiceServer control_service;
 static ros::ServiceClient control_client;
 
-static ros::Publisher wheelCommand_pub;
+static ros::Publisher twist_pub;
+
+/***************
+ * Declare states that the turtlebot can be in
+ * ************/
+enum State {Idle, ccw, cw, stop};
+
+static State current;
+
+/***************
+ * Helper Functions
+ * ************/
+bool control(nuturtle_robot::control::Request &req, nuturtle_robot::control::Response &res);
 
 int main(int argc, char* argv[])
 {
+    using namespace rigid2d;
+
     /****************
      * Initialize node & node handler
     ****************/
     ros::init(argc, argv, "follow_circle");
-    ros::NodeHandle n;
+    ros::NodeHandle n("~");
 
     /****************
      * Define variables
@@ -40,18 +60,64 @@ int main(int argc, char* argv[])
     int frequency = 100;
     n.getParam("radius", radius);
     n.getParam("speed", speed);
+    n.getParam("wheel_base", wheelBase);
+    n.getParam("wheel_radius", wheelRad);
 
     /****************
      * Define publisher, subscriber, services and clients
      * *************/
-    wheelCommand_pub = n.advertise<nuturtlebot::WheelCommands>("/wheel_cmd", frequency);
+    twist_pub = n.advertise<geometry_msgs::Twist>("/cmd_vel", frequency);
+
     control_service = n.advertiseService("/control", control);
     control_client = n.serviceClient<nuturtle_robot::control>("/control");
-    
+
+    geometry_msgs::Twist twist_msg;
+
+    current = Idle;
+
     ros::Rate loop_rate(frequency);
     while (ros::ok())
     {
         ros::spinOnce();
+
+        switch (current)
+        {
+            case Idle:
+                twist_msg.linear.x = 0.0;
+                twist_msg.linear.y = 0.0;
+                twist_msg.angular.z = 0.0;
+                twist_pub.publish(twist_msg);
+                break;
+            case ccw:
+                // linear_left = circ_inner / time;
+                // linear_right = circ_outer / time;
+                // wheelCom_msg.left_velocity = linear_left / wheelRad;
+                // wheelCom_msg.right_velocity = linear_right / wheelRad;
+                // wheelCommand_pub.publish(wheelCom_msg);
+                twist_msg.angular.z = radius / speed;
+                twist_msg.linear.x = speed;
+                twist_msg.linear.y = 0.0;
+                twist_pub.publish(twist_msg);
+                break;
+            case cw:
+                // linear_left = circ_outer / time;
+                // linear_right = circ_inner / time;
+                // wheelCom_msg.left_velocity = linear_left / wheelRad;
+                // wheelCom_msg.right_velocity = linear_right / wheelRad;
+                // wheelCommand_pub.publish(wheelCom_msg);
+                twist_msg.angular.z = -radius / speed;
+                twist_msg.linear.x = speed;
+                twist_msg.linear.y = 0.0;
+                twist_pub.publish(twist_msg);
+                break;
+            case stop:
+                twist_msg.linear.x = 0.0;
+                twist_msg.linear.y = 0.0;
+                twist_msg.angular.z = 0.0;
+                twist_pub.publish(twist_msg);
+                break;
+        }
+
         loop_rate.sleep();
     }
     return 0;
@@ -66,12 +132,12 @@ bool control(nuturtle_robot::control::Request &req, nuturtle_robot::control::Res
 {
     if (req.direction == "ccw")
     {
-        ccw = true;
-    } else if (req.direction == 'cw')
+        current = ccw;
+    } else if (req.direction == "cw")
     {
-        ccw = false;
-    } else if (req.direction == 'stop')
+        current = cw;
+    } else if (req.direction == "stop")
     {
-        // stop the robot!!!!!
+        current = stop;
     }
 }
