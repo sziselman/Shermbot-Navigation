@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
                 // wheelCom_msg.left_velocity = linear_left / wheelRad;
                 // wheelCom_msg.right_velocity = linear_right / wheelRad;
                 // wheelCommand_pub.publish(wheelCom_msg);
-                twist_msg.angular.z = radius / speed;
+                twist_msg.angular.z = -speed / radius;
                 twist_msg.linear.x = speed;
                 twist_msg.linear.y = 0.0;
                 twist_pub.publish(twist_msg);
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
                 // wheelCom_msg.left_velocity = linear_left / wheelRad;
                 // wheelCom_msg.right_velocity = linear_right / wheelRad;
                 // wheelCommand_pub.publish(wheelCom_msg);
-                twist_msg.angular.z = -radius / speed;
+                twist_msg.angular.z = speed / radius;
                 twist_msg.linear.x = speed;
                 twist_msg.linear.y = 0.0;
                 twist_pub.publish(twist_msg);

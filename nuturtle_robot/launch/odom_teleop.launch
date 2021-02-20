@@ -3,15 +3,15 @@
 
     <arg name="circle" default="true" doc="true launches follow_circle node, false launches turtlebot3_teleop_key node"/>
     
-    <group if="$(eval circle == 'false')">
-    <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
-    </group>
-    
-    <group if="$(eval circle == 'true')">
+    <group if="$(arg circle)">
     <node pkg="nuturtle_robot" name="follow_circle" type="follow_circle" output="screen">
-        <param name="~radius" type="double" value="1.0"/>
-        <param name="~speed" type="double" value="0.25"/>
+        <param name="~radius" type="double" value="0.2"/>
+        <param name="~speed" type="double" value="0.5"/>
     </node>
+    </group>
+
+    <group unless="$(arg circle)">
+    <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     </group>
 
     <node pkg="rigid2d" name="odometer" type="odometer" output="screen"/>
