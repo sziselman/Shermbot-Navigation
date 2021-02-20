@@ -69,8 +69,10 @@ namespace rigid2d
         double d = wheelBase / 2;
         double r = wheelRad;
 
+        // double omg = tw.dth;
         double omg = tw.dth;
-        double vbx = (tw.dx * cos(th)) + (tw.dy * sin(th));
+        // double vbx = (tw.dx * cos(th)) + (tw.dy * sin(th));
+        double vbx = tw.dx;
 
         u.uL = (-(d / r) * omg) + (vbx / r);
         u.uR = ((d / r) * omg) + (vbx / r);
