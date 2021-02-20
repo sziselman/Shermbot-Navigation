@@ -94,28 +94,21 @@ int main(int argc, char* argv[])
                 twist_msg.angular.z = 0.0;
                 twist_pub.publish(twist_msg);
                 break;
-            case ccw:
-                // linear_left = circ_inner / time;
-                // linear_right = circ_outer / time;
-                // wheelCom_msg.left_velocity = linear_left / wheelRad;
-                // wheelCom_msg.right_velocity = linear_right / wheelRad;
-                // wheelCommand_pub.publish(wheelCom_msg);
+
+            case cw:
                 twist_msg.angular.z = -speed / radius;
-                twist_msg.linear.x = speed;
+                twist_msg.linear.x = -speed;
                 twist_msg.linear.y = 0.0;
                 twist_pub.publish(twist_msg);
                 break;
-            case cw:
-                // linear_left = circ_outer / time;
-                // linear_right = circ_inner / time;
-                // wheelCom_msg.left_velocity = linear_left / wheelRad;
-                // wheelCom_msg.right_velocity = linear_right / wheelRad;
-                // wheelCommand_pub.publish(wheelCom_msg);
+
+            case ccw:
                 twist_msg.angular.z = speed / radius;
                 twist_msg.linear.x = speed;
                 twist_msg.linear.y = 0.0;
                 twist_pub.publish(twist_msg);
                 break;
+                
             case stop:
                 twist_msg.linear.x = 0.0;
                 twist_msg.linear.y = 0.0;

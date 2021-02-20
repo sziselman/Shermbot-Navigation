@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 
         if (velocities.uR > maxAngVel)
         {
-            velocities.uL = maxAngVel;
+            velocities.uR = maxAngVel;
         } else if (velocities.uR < -maxAngVel)
         {
             velocities.uR = -maxAngVel;

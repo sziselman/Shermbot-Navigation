@@ -69,9 +69,7 @@ namespace rigid2d
         double d = wheelBase / 2;
         double r = wheelRad;
 
-        // double omg = tw.dth;
         double omg = tw.dth;
-        // double vbx = (tw.dx * cos(th)) + (tw.dy * sin(th));
         double vbx = tw.dx;
 
         u.uL = (-(d / r) * omg) + (vbx / r);
@@ -98,7 +96,6 @@ namespace rigid2d
         Twist2D dqb;
 
         dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
-        // dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 
@@ -129,7 +126,6 @@ namespace rigid2d
         Twist2D dqb;
 
         dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
-        // dqb.dth = asin(Tbb.getSinTh());
         dqb.dx = Tbb.getX();
         dqb.dy = Tbb.getY();
 
