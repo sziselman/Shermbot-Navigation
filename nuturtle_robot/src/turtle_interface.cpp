@@ -136,8 +136,6 @@ int main(int argc, char* argv[])
         * Get wheel velocities required to achieve desired twist
         ********************/
         wheelVel velocities = ninjaTurtle.convertTwist(desiredTwist);
-        ROS_INFO("left velocity is %f\n", velocities.uL);
-        ROS_INFO("right velocity is %f\n", velocities.uR);
         
         // Checks to make sure wheel velocities do not exceed maximum speed
         if (velocities.uL > maxAngVel)
@@ -156,8 +154,6 @@ int main(int argc, char* argv[])
             velocities.uR = -maxAngVel;
         }
 
-        ROS_INFO("the left velocity is %f\n", velocities.uL);
-
         /********************
         * Update configuration of the diff drive robot
         ********************/
@@ -175,7 +171,6 @@ int main(int argc, char* argv[])
 
         wheelCom_msg.left_velocity = leftCommand;
         wheelCom_msg.right_velocity = rightCommand;
-        ROS_INFO("the left command is %d\n", wheelCom_msg.left_velocity);
         wheelCom_pub.publish(wheelCom_msg);
 
         /******************
@@ -205,7 +200,6 @@ int main(int argc, char* argv[])
 void twistCallback(const geometry_msgs::Twist msg)
 {
     twist_msg = msg;
-    ROS_INFO("received twist message");
 }
 
 /// \brief sensorCallback function
@@ -216,5 +210,4 @@ void twistCallback(const geometry_msgs::Twist msg)
 void sensorCallback(const nuturtlebot::SensorData data)
 {
     sensor_data = data;
-    ROS_INFO("received sensor data");
 }
