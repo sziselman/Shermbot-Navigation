@@ -3,6 +3,8 @@
 
     <arg name="circle" default="true" doc="true launches follow_circle node, false launches turtlebot3_teleop_key node"/>
     
+    <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
+    
     <group if="$(arg circle)">
     <node pkg="nuturtle_robot" name="follow_circle" type="follow_circle" output="screen">
         <param name="~radius" type="double" value="0.12"/>
@@ -14,13 +16,9 @@
     <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     </group>
 
-    <node pkg="rigid2d" name="odometer" type="odometer" output="screen"/>
-
-    <node pkg="nuturtle_robot" name="turtle_interface" type="turtle_interface" output="screen"/>
-
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
 
-    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz" type="rviz"/>
+    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f odom" type="rviz"/>
 
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
     <param name="wheel_base" type="double" value="0.16"/>
@@ -29,4 +27,16 @@
     <param name="body_frame_id" type="string" value="base_link"/>
     <param name="left_wheel_joint" type="string" value="wheel_left_joint"/>
     <param name="right_wheel_joint" type="string" value="wheel_right_joint"/>
+
+    <machine name="turtlebot" address="$(arg robot)" env-loader="/home/ubuntu/loader.sh" user="ubuntu"/>
+    
+    <node machine="turtlebot" name="serial_node" pkg="rosserial_python" type="serial_node.py">
+        <param name="port" value="/dev/ttyACM0"/>
+        <param name="baud" value="115200"/>
+    </node>
+    
+    <node pkg="rigid2d" name="odometer" type="odometer" output="screen" machine="turtlebot"/>
+
+    <node pkg="nuturtle_robot" name="turtle_interface" type="turtle_interface" output="screen" machine="turtlebot"/>
+    
 </launch>

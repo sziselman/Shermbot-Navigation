@@ -37,6 +37,8 @@ static rigid2d::DiffDrive ninjaTurtle;
 static geometry_msgs::Twist twist_msg;
 static nuturtlebot::SensorData sensor_data;
 
+static bool michelangelo = true;
+
 /******************
 * Helper Functions
 ******************/
@@ -74,6 +76,7 @@ int main(int argc, char* argv[])
 
     sensor_msgs::JointState joint_msg;
     nuturtlebot::WheelCommands wheelCom_msg;
+    double encoderL, encoderR;
 
     /**********************
     * Define publisher, subscriber, services and clients
@@ -127,8 +130,15 @@ int main(int argc, char* argv[])
         /********************
         * Read the encoder data to update robot config based on current wheel angles
         ********************/
-        double leftAngle = (2 * PI / 4096) * sensor_data.left_encoder;
-        double rightAngle = (2 * PI / 4096) * sensor_data.right_encoder;
+        if (michelangelo)
+        {
+            encoderL = sensor_data.left_encoder;
+            encoderR = sensor_data.right_encoder;
+            michelangelo = false;
+        }
+
+        double leftAngle = (2.0 * PI / 4096.0) * double(sensor_data.left_encoder - encoderL);
+        double rightAngle = (2.0 * PI / 4096.0) * double(sensor_data.right_encoder - encoderR);
 
         ninjaTurtle(leftAngle, rightAngle);
 
