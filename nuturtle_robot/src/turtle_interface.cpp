@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 
     sensor_msgs::JointState joint_msg;
     nuturtlebot::WheelCommands wheelCom_msg;
-    double encoderL, encoderR;
+    int encoderL, encoderR;
 
     /**********************
     * Define publisher, subscriber, services and clients
