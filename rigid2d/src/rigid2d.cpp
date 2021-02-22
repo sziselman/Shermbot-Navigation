@@ -328,7 +328,7 @@ namespace rigid2d
             /***********************************
             * Want to find T_ss'
             ***********************************/
-            T_ss = Transform2D(tw.dth);
+            T_ss = Transform2D(-tw.dth);
 
             /***********************************
             * We know that T_bs = T_s'b'
@@ -336,7 +336,7 @@ namespace rigid2d
             ***********************************/
             intTwist = T_bs;
             intTwist *= T_ss;
-            intTwist *= T_bs;
+            intTwist *= T_bs.inv();
         }
         return intTwist;
     }
