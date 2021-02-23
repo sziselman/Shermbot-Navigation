@@ -34,7 +34,8 @@ rosservice call /control stop
 I currently can't upload my gifs as they are over 100MB and too large to upload to my git. Am working on compressing them down.
 Also, I am still fixing my odometer node, as it currently says my x and y locations are in the hundreds of thousands.. which is incorrect.
 Below is a .gif animation of the robot moving in backward/forward motion.
-
+![](https://drive.google.com/uc?export=view&id=10TJfIkKhyZBhw4tlfTHuNQmEMD_IuyU_)
 Below is a .gif animation of the robot rotating counter-clockwise/clockwise.
-
+![]()
 Below is a .gif animation of the robot driving in a counter-clockwise/clockwise circle.
+![]()
