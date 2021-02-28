@@ -19,10 +19,18 @@
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
 #include <visualization_msgs/MarkerArray.h>
+
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include <string>
 #include <random>
 #include <iostream>
 #include <math.h>
+#include <cmath>
 
 /****************************
 * Declaring global variables
@@ -75,6 +83,7 @@ int main(int argc, char* argv[])
 
     sensor_msgs::JointState joint_msg;
     visualization_msgs::MarkerArray marker1;
+    nav_msgs::Path path;
     // visualization_msgs::MarkerArray marker2;
 
     wheelVel wheelVelocities;
@@ -109,13 +118,17 @@ int main(int argc, char* argv[])
     std::normal_distribution<> g_th(0, twist_noise);
     std::normal_distribution<> left_noise(slip_mean, slip_var);
     std::normal_distribution<> right_noise(slip_mean slip_var);
+    std::normal_distribution<> tube_noiseX(0, tube_var);
+    std::normal_distribution<> tube_noiseY(0, tube_var);
 
     /**********************
     * Define publisher, subscriber, service and clients
     **********************/
     ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency, 10000);
-    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency, true)
+    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10, true)
+    ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);
+    tf2_ros::TransformBroadcaster broadcaster;
 
     ros::Rate loop_rate(frequency);
 
@@ -135,6 +148,7 @@ int main(int argc, char* argv[])
 
     ros::Time last_time = ros::Time::now();
     ros::Time current_time = ros::Time::now();
+
     while (ros::ok())
     {
         ros::Time current_time = ros::Time::now();
@@ -144,7 +158,22 @@ int main(int argc, char* argv[])
         /**********************
          * Publish cylindrical markers corresponding to locations of the tubes
          * *******************/
-        if (sqrt( (tube1_loc[0] - )))
+        marker1.header.frame_id = world_frame_id;
+        marker1.header.stamp = ros::Time();
+        marker1.ns = "real";
+        marker1.type = visualization_msgs::Marker::CYLINDER;
+        if (sqrt(pow(tube1_loc[0] - ninjaTurtle.getX(), 2) + pow(tube1_loc[1] - ninjaTurtle.getY(), 2)) > max_range)
+        {
+            marker1.action = visualization_msgs::Marker::DELETE;
+        } else
+        {
+            marker1.action = visualization_msgs::Marker::ADD;
+        }
+        marker1.pose.position.x = tube1_loc[0] + tube_noiseX(get_random());
+        marker1.pose.position.y = tube1_loc[1] + tube_noiseY(get_random());
+        marker1.pose.position.z = 0.0;
+        marker1.scale.x = tube_radius;
+        marker_pub.publish(marker1);
 
         /**********************
         * Create the desired twist based on the twist message
@@ -185,6 +214,40 @@ int main(int argc, char* argv[])
         ninjaTurtle(joint_msg.position[0], joint_msg.position[1]);
         
         pub.publish(joint_msg);
+
+        /**********************
+         * Publish a transform between the world and turtle frame
+         * *******************/
+        tf2::Quaternion odom_quater;
+        odom_quater.setRPY(0, 0, ninjaTurtle.getTh());
+
+        geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
+
+        geometry_msgs::TransformStamped odom_trans;
+        odom_trans.header.stamp = current_time;
+        odom_trans.header.frame_id = world_frame_id;
+        odom_trans.child_frame_id = turtle_frame_id;
+
+        odom_trans.transform.translation.x = ninjaTurtle.getX();
+        odom_trans.transform.translation.y = ninjaTurtle(getY();
+        odom_trans.transform.trnalsation.z = 0.0;
+        odom_trans.transform.rotation = odom_quat;
+        
+        broadcaster.sendTransform(odom_trans);
+
+        /**********************
+         * Publish a message to show the actual robot trajectory
+         * *******************/
+        path.header.frame_id = turtle_frame_id;
+        path.header.stamp = current_time;
+        path.position.x = ninjaTurtle.getX();
+        path.position.y = ninjaTurtle.getY();
+        path.position.z = 0.0;
+        path_pub.publish(path);
+
+        /*********************
+         * Update time and sleep
+         * ******************/
         last_time = current_time;
         loop_rate.sleep();
     }

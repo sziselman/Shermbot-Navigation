@@ -23,8 +23,8 @@
     <param name="twist_noise" type="double" value="1"/>
 
     <param name="tube_radius" type="double" value="0.0762"/>
-    <rosparam name="tube1_location">[0.5, 0.5]</rosparam>
-    <rosparam name="tube2_location">[-0.5, -0.5]</rosparam>
+    <rosparam param="tube1_location">[0.5, 0.5]</rosparam>
+    <rosparam param="tube2_location">[-0.5, -0.5]</rosparam>
     <param name="world_frame_id" type="string" value="world"/>
     <param name="turtle_frame_id" type="string" value="turtle"/>
     <param name="tube_var" type="double" value="1.0"/>
