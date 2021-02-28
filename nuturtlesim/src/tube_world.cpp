@@ -18,6 +18,7 @@
 #include <sensor_msgs/JointState.h>
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
+#include <visualization_msgs/MarkerArray.h>
 #include <string>
 #include <random>
 #include <iostream>
@@ -60,6 +61,27 @@ int main(int argc, char* argv[])
     ros::NodeHandle n;
 
     /**********************
+    * Initialize local variables
+    **********************/
+    int frequency = 1;
+    double wheelBase, wheelRad, slip_min, slip_max, twist_noise, tube_rad, max_range;
+    double slip_mean = (slip_min + slip_max) / 2;
+    double slip_var = slip_max - slip_mean;
+    double slip_noiseL, slip_noiseR;
+
+    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
+    std::string world_frame_id, turtle_frame_id;
+
+    sensor_msgs::JointState joint_msg;
+    visualization_msgs::MarkerArray marker1;
+    // visualization_msgs::MarkerArray marker2;
+
+    wheelVel wheelVelocities;
+
+    std::vector<double> tube1_loc;
+    // std::vector<double> tube2_loc;
+
+    /**********************
     * Reads parameters from parameter server
     **********************/
     n.getParam("wheel_base", wheelBase);
@@ -71,35 +93,26 @@ int main(int argc, char* argv[])
     n.getParam("slip_min", slip_min);
     n.getParam("slip_max", slip_max);
     n.getParam("twist_noise", twist_noise);
+    n.getParam("tube1_location", tube1_loc);
+    // n.getParam("tube2_location", tube2_loc);
+    n.getParam("tube_radius", tube_rad);
+    n.getParam("max_range", max_range);
+    n.getParam("world_frame_id", world_frame_id);
+    n.getParam("turtle_frame_id", turtle_frame_id);
 
     /**********************
-    * Initialize local variables
-    **********************/
-    int frequency = 1;
-    double wheelBase, wheelRad, slip_min, slip_max, twist_noise;
-    double slip_mean = (slip_min + slip_max) / 2;
-    double slip_var = slip_max - slip_mean;
-    double slip_noiseL, slip_noiseR;
-
-    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
-
-    sensor_msgs::JointState joint_msg;
+     * Initialize more local variables
+     * *******************/
     std::normal_distribution<> g_vx(0, twist_noise);
     std::normal_distribution<> g_th(0, twist_noise);
     std::normal_distribution<> left_noise(slip_mean, slip_var);
     std::normal_distribution<> right_noise(slip_mean slip_var);
 
-    wheelVel wheelVelocities;
-
-    std::vector<double> tube1_loc;
-    std::vector<double> tube2_loc;
-    n.getParam("tube1_location", tube1_loc);
-    n.getParam("tube2_location", tube2_loc);
-
     /**********************
     * Define publisher, subscriber, service and clients
     **********************/
     ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency, 10000);
+    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency, true)
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);
 
     ros::Rate loop_rate(frequency);
@@ -125,6 +138,19 @@ int main(int argc, char* argv[])
         ros::Time current_time = ros::Time::now();
 
         ros::spinOnce();
+
+        /**********************
+         * Publish cylindrical markers corresponding to locations of the tubes
+         * *******************/
+        // marker1.header.frame_id = ???
+        marker1.header.stamp = ros::Time();
+        marker1.ns = "real";
+        marker1.type = visualization_msgs::Marker::CYLINDER;
+        marker1.pose.position.x = tube1_loc[0];
+        marker1.pose.position.y = tube1_loc[1];
+        marker1.pose.position.z = 0.0;
+        marker1.scale.x = tube_radius;
+        marker_pub.publish(marker1);
 
         /**********************
         * Create the desired twist based on the twist message

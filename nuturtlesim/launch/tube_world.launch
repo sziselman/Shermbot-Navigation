@@ -25,8 +25,10 @@
     <param name="tube_radius" type="double" value="0.0762"/>
     <rosparam name="tube1_location">[0.5, 0.5]</rosparam>
     <rosparam name="tube2_location">[-0.5, -0.5]</rosparam>
-    
-    <param name="max_distance" type="double" value="2.0"/>
+    <param name="world_frame_id" type="string" value="world"/>
+    <param name="turtle_frame_id" type="string" value="turtle"/>
+
+    <param name="max_range" type="double" value="2.0"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
 </launch>
