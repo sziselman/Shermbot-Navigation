@@ -22,6 +22,7 @@
 #include <string>
 #include <random>
 #include <iostream>
+#include <math.h>
 
 /****************************
 * Declaring global variables
@@ -64,7 +65,7 @@ int main(int argc, char* argv[])
     * Initialize local variables
     **********************/
     int frequency = 1;
-    double wheelBase, wheelRad, slip_min, slip_max, twist_noise, tube_rad, max_range;
+    double wheelBase, wheelRad, slip_min, slip_max, twist_noise, tube_rad, max_range, tube_var;
     double slip_mean = (slip_min + slip_max) / 2;
     double slip_var = slip_max - slip_mean;
     double slip_noiseL, slip_noiseR;
@@ -99,6 +100,7 @@ int main(int argc, char* argv[])
     n.getParam("max_range", max_range);
     n.getParam("world_frame_id", world_frame_id);
     n.getParam("turtle_frame_id", turtle_frame_id);
+    n.getParam("tube_var", tube_var);
 
     /**********************
      * Initialize more local variables
@@ -121,7 +123,7 @@ int main(int argc, char* argv[])
     * Set initial parameters of the differential drive robot to 0
     * Set the initial position of the left and right wheel
     **********************/
-    DiffDrive fakeTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
+    DiffDrive ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     joint_msg.name.push_back(left_wheel_joint);
     joint_msg.name.push_back(right_wheel_joint);
@@ -142,15 +144,7 @@ int main(int argc, char* argv[])
         /**********************
          * Publish cylindrical markers corresponding to locations of the tubes
          * *******************/
-        // marker1.header.frame_id = ???
-        marker1.header.stamp = ros::Time();
-        marker1.ns = "real";
-        marker1.type = visualization_msgs::Marker::CYLINDER;
-        marker1.pose.position.x = tube1_loc[0];
-        marker1.pose.position.y = tube1_loc[1];
-        marker1.pose.position.z = 0.0;
-        marker1.scale.x = tube_radius;
-        marker_pub.publish(marker1);
+        if (sqrt( (tube1_loc[0] - )))
 
         /**********************
         * Create the desired twist based on the twist message
@@ -167,7 +161,7 @@ int main(int argc, char* argv[])
         /**********************
         * Find the wheel velocities required to achieve that twist
         **********************/
-        wheelVelocities = fakeTurtle.convertTwist(desiredTwist);
+        wheelVelocities = ninjaTurtle.convertTwist(desiredTwist);
 
         /**********************
         * Populate the sensor messages
@@ -188,7 +182,7 @@ int main(int argc, char* argv[])
         /**********************
          * Update the configuration of the diff drive based on new wheel angles
          * *******************/
-        fakeTurtle(joint_msg.position[0], joint_msg.position[1]);
+        ninjaTurtle(joint_msg.position[0], joint_msg.position[1]);
         
         pub.publish(joint_msg);
         last_time = current_time;

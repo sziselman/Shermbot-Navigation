@@ -27,7 +27,7 @@
     <rosparam name="tube2_location">[-0.5, -0.5]</rosparam>
     <param name="world_frame_id" type="string" value="world"/>
     <param name="turtle_frame_id" type="string" value="turtle"/>
-
+    <param name="tube_var" type="double" value="1.0"/>
     <param name="max_range" type="double" value="2.0"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
