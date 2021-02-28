@@ -35,8 +35,8 @@ I currently can't upload my gifs as they are over 100MB and too large to upload 
 Also, I am still fixing my odometer node, as it currently says my x and y locations are in the hundreds of thousands.. which is incorrect.
 
 Below is a .gif animation of the robot moving in backward/forward motion.
-![gif](https://drive.google.com/uc?export=view&id=10TJfIkKhyZBhw4tlfTHuNQmEMD_IuyU_)
+![](https://drive.google.com/uc?export=view&id=10TJfIkKhyZBhw4tlfTHuNQmEMD_IuyU_)
 Below is a .gif animation of the robot rotating counter-clockwise/clockwise.
-![gif](https://drive.google.com/uc?export=view&id=1iV1cexMgyEQOZ-HSeTIhQliZsY_ycmUM)
+![](https://drive.google.com/uc?export=view&id=1iV1cexMgyEQOZ-HSeTIhQliZsY_ycmUM)
 Below is a .gif animation of the robot driving in a counter-clockwise/clockwise circle.
-![gif](https://drive.google.com/uc?export=view&id=1DG9hfBL64F_pzBvydPeIy8Hqr4bJBSTs)
+![](https://drive.google.com/uc?export=view&id=1DG9hfBL64F_pzBvydPeIy8Hqr4bJBSTs)
