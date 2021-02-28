@@ -18,6 +18,15 @@
     <param name="body_frame_id" type="string" value="base_footprint"/>
     <param name="left_wheel_joint" type="string" value="wheel_left_joint"/>
     <param name="right_wheel_joint" type="string" value="wheel_right_joint"/>
+    <param name="slip_min" type="double" value="0"/>
+    <param name="slip_max" type="double" value="1"/>
+    <param name="twist_noise" type="double" value="1"/>
+
+    <param name="tube_radius" type="double" value="0.0762"/>
+    <rosparam name="tube1_location">[0.5, 0.5]</rosparam>
+    <rosparam name="tube2_location">[-0.5, -0.5]</rosparam>
+    
+    <param name="max_distance" type="double" value="2.0"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
 </launch>

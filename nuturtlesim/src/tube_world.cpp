@@ -19,12 +19,12 @@
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
 #include <string>
+#include <random>
 #include <iostream>
 
 /****************************
 * Declaring global variables
 ****************************/
-
 static geometry_msgs::Twist twist_msg;
 static const double PI = 3.14159265359;
 
@@ -32,6 +32,19 @@ static const double PI = 3.14159265359;
 * Declare helper functions
 ****************************/
 void twistCallback(const geometry_msgs::Twist msg);
+
+/****************************
+ * get_random() function
+ * *************************/
+std::mt19937 & get_random()
+ {
+     // static variables inside a function are created once and persist for the remainder of the program
+     static std::random_device rd{}; 
+     static std::mt19937 mt{rd()};
+     // we return a reference to the pseudo-random number genrator object. This is always the
+     // same object every time get_random is called
+     return mt;
+ }
 
 /****************************
 * Main Function
@@ -47,19 +60,6 @@ int main(int argc, char* argv[])
     ros::NodeHandle n;
 
     /**********************
-    * Initialize local variables
-    **********************/
-    int frequency = 1;
-    double wheelBase, wheelRad;
-
-    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
-
-    sensor_msgs::JointState joint_msg;
-    // geometry_msgs::Twist twist_msg;
-
-    wheelVel wheelVelocities;
-
-    /**********************
     * Reads parameters from parameter server
     **********************/
     n.getParam("wheel_base", wheelBase);
@@ -68,6 +68,33 @@ int main(int argc, char* argv[])
     n.getParam("body_frame_id", body_frame_id);
     n.getParam("left_wheel_joint", left_wheel_joint);
     n.getParam("right_wheel_joint", right_wheel_joint);
+    n.getParam("slip_min", slip_min);
+    n.getParam("slip_max", slip_max);
+    n.getParam("twist_noise", twist_noise);
+
+    /**********************
+    * Initialize local variables
+    **********************/
+    int frequency = 1;
+    double wheelBase, wheelRad, slip_min, slip_max, twist_noise;
+    double slip_mean = (slip_min + slip_max) / 2;
+    double slip_var = slip_max - slip_mean;
+    double slip_noiseL, slip_noiseR;
+
+    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
+
+    sensor_msgs::JointState joint_msg;
+    std::normal_distribution<> g_vx(0, twist_noise);
+    std::normal_distribution<> g_th(0, twist_noise);
+    std::normal_distribution<> left_noise(slip_mean, slip_var);
+    std::normal_distribution<> right_noise(slip_mean slip_var);
+
+    wheelVel wheelVelocities;
+
+    std::vector<double> tube1_loc;
+    std::vector<double> tube2_loc;
+    n.getParam("tube1_location", tube1_loc);
+    n.getParam("tube2_location", tube2_loc);
 
     /**********************
     * Define publisher, subscriber, service and clients
@@ -107,6 +134,10 @@ int main(int argc, char* argv[])
         desiredTwist.dx = twist_msg.linear.x;
         desiredTwist.dy = twist_msg.linear.y;
 
+        // Add Gaussian noise to the commanded twist
+        desiredTwist.dth += d_th(get_random());
+        desiredTwist.dx += d_vx(get_random());
+
         /**********************
         * Find the wheel velocities required to achieve that twist
         **********************/
@@ -118,16 +149,20 @@ int main(int argc, char* argv[])
         joint_msg.header.stamp = current_time;
         joint_msg.header.frame_id = odom_frame_id;
 
-        // joint_msg.position[0] += wheelVelocities.uL;
-        // joint_msg.position[1] += wheelVelocities.uR;
-
         joint_msg.position[0] += wheelVelocities.uL * (current_time - last_time).toSec();
         joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
 
-        // joint_msg.position[0] = normalize_angle(joint_msg.position[0]);
-        // joint_msg.position[1] = normalize_angle(joint_msg.position[1]);
+        // Add wheel slip noise
+        slip_noiseL = left_noise * wheelVelocities.uL;
+        slip_noiseR = right_noise * wheelVelocities.uR;
 
-        fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
+        joint_msg.position[0] += slip_noiseL;
+        joint_msg.position[1] += slip_noiseR;
+
+        /**********************
+         * Update the configuration of the diff drive based on new wheel angles
+         * *******************/
+        fakeTurtle(joint_msg.position[0], joint_msg.position[1]);
         
         pub.publish(joint_msg);
         last_time = current_time;
