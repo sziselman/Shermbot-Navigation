@@ -24,7 +24,7 @@
     <param name="wheel_base" type="double" value="0.16"/>
     <param name="wheel_radius" type="double" value="0.033"/>
     <param name="odom_frame_id" type="string" value="odom"/>
-    <param name="body_frame_id" type="string" value="base_link"/>
+    <param name="body_frame_id" type="string" value="base_footprint"/>
     <param name="left_wheel_joint" type="string" value="wheel_left_joint"/>
     <param name="right_wheel_joint" type="string" value="wheel_right_joint"/>
 
