@@ -6,15 +6,10 @@ Open a terminal and run the following command:
 ```
 roscore
 ```
-Open a new terminal and run the following commands:
-```
-ssh ubuntu@shermbot.local
-roslaunch turtlebot3_bringup turtlebot3_robot.launch
-```
 Open a new terminal and run the following commands depending on whether you want to run follow_circle (true) or teleop_keyboard(false):
 ```
-roslaunch nuturtle_robot odom_teleop.launch circle:=true
-roslaunch nuturtle_robot odom_teleop.launch circle:=false
+roslaunch nuturtle_robot odom_teleop.launch robot:=shermbot.local circle:=true
+roslaunch nuturtle_robot odom_teleop.launch robot:=shermbot.local circle:=false
 ```
 If you run the ``` follow_circle ``` node, it will automatically put you in an "Idle" state. To control the robot's movements, open a new terminal and run the following commands.
 To have the robot drive in a counter-clockwise circle:

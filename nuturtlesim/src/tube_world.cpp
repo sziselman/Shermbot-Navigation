@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     /**********************
     * Initialize local variables
     **********************/
-    int frequency = 1;
+    int frequency = 10;
     double wheelBase, wheelRad, slip_min, slip_max, twist_noise, tube_rad, max_range, tube_var;
     double slip_mean = (slip_min + slip_max) / 2;
     double slip_var = slip_max - slip_mean;
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     /**********************
     * Define publisher, subscriber, service and clients
     **********************/
-    ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency, 10000);
+    ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
     ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10, true);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);

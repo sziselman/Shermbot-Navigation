@@ -1,0 +1,17 @@
+<launch>
+    <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
+
+    <group if="$(eval arg('robot')=='local')">
+        <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
+    </group>
+
+    <group unless="$(eval arg('robot')=='local">
+        <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+    </group>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
+
+    <node pkg="rviz" name="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f turtle" type="rviz"/>
+
+    <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+</launch>
