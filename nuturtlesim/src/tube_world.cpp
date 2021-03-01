@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     sensor_msgs::JointState joint_msg;
     visualization_msgs::Marker marker1;
     visualization_msgs::Marker marker2;
-    visualization_msgs::MarkerArray markerArray;
+    // visualization_msgs::MarkerArray markerArray;
 
     nav_msgs::Path path;
 
@@ -150,11 +150,11 @@ int main(int argc, char* argv[])
 
     pub.publish(joint_msg);
 
-    markerArray.markers.push_back(marker1);
-    markerArray.markers.push_back(marker2);
+    // markerArray.markers.push_back(marker1);
+    // markerArray.markers.push_back(marker2);
 
     ros::Time last_time = ros::Time::now();
-    ros::Time current_time = ros::Time::now();
+    ros::Time current_time;
 
     while (ros::ok())
     {
@@ -166,10 +166,13 @@ int main(int argc, char* argv[])
          * Publish cylindrical markers corresponding to locations of the tubes
          * *******************/
         
+        visualization_msgs::MarkerArray markerArray;
+
         // marker1
         marker1.header.frame_id = world_frame_id;
         marker1.header.stamp = current_time;
         marker1.ns = "real";
+        marker1.id = 0;
         marker1.type = visualization_msgs::Marker::CYLINDER;
         if (sqrt(pow(tube1_loc[0] - ninjaTurtle.getX(), 2) + pow(tube1_loc[1] - ninjaTurtle.getY(), 2)) > max_range)
         {
@@ -180,15 +183,22 @@ int main(int argc, char* argv[])
         }
         marker1.pose.position.x = tube1_loc[0] + tube_noise(get_random());
         marker1.pose.position.y = tube1_loc[1] + tube_noise(get_random());
-        marker1.pose.position.z = 0.0;
+        marker1.pose.position.z = 1.0;
         marker1.scale.x = tube_rad;
+        marker1.scale.y = tube_rad;
+        marker1.scale.z = 1.0;
+        marker1.color.a = 0.5;
+        marker1.color.r = 255/255;
+        marker1.color.g = 192/255;
+        marker1.color.b = 203/255;
 
-        markerArray.markers[0] = marker1;
+        markerArray.markers.push_back(marker1);
 
         // marker2
         marker2.header.frame_id = world_frame_id;
         marker2.header.stamp = current_time;
         marker2.ns = "real";
+        marker2.id = 1;
         marker2.type = visualization_msgs::Marker::CYLINDER;
         if (sqrt(pow(tube2_loc[0] - ninjaTurtle.getX(), 2) + pow(tube2_loc[1] - ninjaTurtle.getY(), 2)) > max_range)
         {
@@ -199,10 +209,16 @@ int main(int argc, char* argv[])
         }
         marker2.pose.position.x = tube2_loc[0] + tube_noise(get_random());
         marker2.pose.position.y = tube2_loc[1] + tube_noise(get_random());
-        marker2.pose.position.z = 0.0;
+        marker2.pose.position.z = 1.0;
         marker2.scale.x = tube_rad;
+        marker2.scale.y = tube_rad;
+        marker2.scale.z = 1.0;
+        marker2.color.a = 0.5;
+        marker2.color.r = 255/255;
+        marker2.color.g = 192/255;
+        marker2.color.b = 203/255;
 
-        markerArray.markers[1] = marker2;
+        markerArray.markers.push_back(marker2);
 
         marker_pub.publish(markerArray);
 
@@ -269,15 +285,15 @@ int main(int argc, char* argv[])
         /**********************
          * Publish a message to show the actual robot trajectory
          * *******************/
-        path.header.frame_id = turtle_frame_id;
+        geometry_msgs::PoseStamped poseStamp;
         path.header.stamp = current_time;
+        path.header.frame_id = world_frame_id;
+        poseStamp.pose.position.x = ninjaTurtle.getX();
+        poseStamp.pose.position.y = ninjaTurtle.getY();
+        poseStamp.pose.orientation.z = ninjaTurtle.getTh();
 
-        geometry_msgs::Pose pose;
-        pose.position.x = ninjaTurtle.getX();
-        pose.position.y = ninjaTurtle.getY();
-        pose.position.z = 0.0;
-
-        path.poses.push_back(pose);
+        path.poses.push_back(poseStamp);
+        path_pub.publish(path);
 
         /*********************
          * Update time and sleep
