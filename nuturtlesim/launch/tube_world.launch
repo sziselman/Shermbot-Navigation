@@ -3,13 +3,11 @@
 
     <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     
-    <node pkg="rigid2d" type="odometer" name="odometer" output="screen" />
-
-    <node pkg="rigid2d" type="fake_turtle" name="fake_turtle"/>
+    <node pkg="nuturtlesim" type="tube_world" name="tube_world" output="screen" />
 
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
 
-    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f odom" type="rviz"/>
+    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f turtle" type="rviz"/>
 
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
     <param name="wheel_base" type="double" value="0.16"/>

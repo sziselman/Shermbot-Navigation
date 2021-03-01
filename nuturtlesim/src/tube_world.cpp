@@ -15,22 +15,26 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
 #include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
 
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <nav_msgs/Path.h>
 
 #include <string>
 #include <random>
 #include <iostream>
 #include <math.h>
 #include <cmath>
+#include <vector>
 
 /****************************
 * Declaring global variables
@@ -66,7 +70,7 @@ int main(int argc, char* argv[])
     /**********************
     * Initialize the node & node handle
     **********************/
-    ros::init(argc, argv, "fake_turtle");
+    ros::init(argc, argv, "tube_world");
     ros::NodeHandle n;
 
     /**********************
@@ -82,14 +86,16 @@ int main(int argc, char* argv[])
     std::string world_frame_id, turtle_frame_id;
 
     sensor_msgs::JointState joint_msg;
-    visualization_msgs::MarkerArray marker1;
+    visualization_msgs::Marker marker1;
+    visualization_msgs::Marker marker2;
+    visualization_msgs::MarkerArray markerArray;
+
     nav_msgs::Path path;
-    // visualization_msgs::MarkerArray marker2;
 
     wheelVel wheelVelocities;
 
     std::vector<double> tube1_loc;
-    // std::vector<double> tube2_loc;
+    std::vector<double> tube2_loc;
 
     /**********************
     * Reads parameters from parameter server
@@ -104,7 +110,7 @@ int main(int argc, char* argv[])
     n.getParam("slip_max", slip_max);
     n.getParam("twist_noise", twist_noise);
     n.getParam("tube1_location", tube1_loc);
-    // n.getParam("tube2_location", tube2_loc);
+    n.getParam("tube2_location", tube2_loc);
     n.getParam("tube_radius", tube_rad);
     n.getParam("max_range", max_range);
     n.getParam("world_frame_id", world_frame_id);
@@ -116,16 +122,14 @@ int main(int argc, char* argv[])
      * *******************/
     std::normal_distribution<> g_vx(0, twist_noise);
     std::normal_distribution<> g_th(0, twist_noise);
-    std::normal_distribution<> left_noise(slip_mean, slip_var);
-    std::normal_distribution<> right_noise(slip_mean slip_var);
-    std::normal_distribution<> tube_noiseX(0, tube_var);
-    std::normal_distribution<> tube_noiseY(0, tube_var);
+    std::normal_distribution<> slip_noise(slip_mean, slip_var);
+    std::normal_distribution<> tube_noise(0, tube_var);
 
     /**********************
     * Define publisher, subscriber, service and clients
     **********************/
     ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency, 10000);
-    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10, true)
+    ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10, true);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);
     tf2_ros::TransformBroadcaster broadcaster;
@@ -146,6 +150,9 @@ int main(int argc, char* argv[])
 
     pub.publish(joint_msg);
 
+    markerArray.markers.push_back(marker1);
+    markerArray.markers.push_back(marker2);
+
     ros::Time last_time = ros::Time::now();
     ros::Time current_time = ros::Time::now();
 
@@ -158,8 +165,10 @@ int main(int argc, char* argv[])
         /**********************
          * Publish cylindrical markers corresponding to locations of the tubes
          * *******************/
+        
+        // marker1
         marker1.header.frame_id = world_frame_id;
-        marker1.header.stamp = ros::Time();
+        marker1.header.stamp = current_time;
         marker1.ns = "real";
         marker1.type = visualization_msgs::Marker::CYLINDER;
         if (sqrt(pow(tube1_loc[0] - ninjaTurtle.getX(), 2) + pow(tube1_loc[1] - ninjaTurtle.getY(), 2)) > max_range)
@@ -169,11 +178,33 @@ int main(int argc, char* argv[])
         {
             marker1.action = visualization_msgs::Marker::ADD;
         }
-        marker1.pose.position.x = tube1_loc[0] + tube_noiseX(get_random());
-        marker1.pose.position.y = tube1_loc[1] + tube_noiseY(get_random());
+        marker1.pose.position.x = tube1_loc[0] + tube_noise(get_random());
+        marker1.pose.position.y = tube1_loc[1] + tube_noise(get_random());
         marker1.pose.position.z = 0.0;
-        marker1.scale.x = tube_radius;
-        marker_pub.publish(marker1);
+        marker1.scale.x = tube_rad;
+
+        markerArray.markers[0] = marker1;
+
+        // marker2
+        marker2.header.frame_id = world_frame_id;
+        marker2.header.stamp = current_time;
+        marker2.ns = "real";
+        marker2.type = visualization_msgs::Marker::CYLINDER;
+        if (sqrt(pow(tube2_loc[0] - ninjaTurtle.getX(), 2) + pow(tube2_loc[1] - ninjaTurtle.getY(), 2)) > max_range)
+        {
+            marker2.action = visualization_msgs::Marker::DELETE;
+        } else
+        {
+            marker2.action = visualization_msgs::Marker::ADD;
+        }
+        marker2.pose.position.x = tube2_loc[0] + tube_noise(get_random());
+        marker2.pose.position.y = tube2_loc[1] + tube_noise(get_random());
+        marker2.pose.position.z = 0.0;
+        marker2.scale.x = tube_rad;
+
+        markerArray.markers[1] = marker2;
+
+        marker_pub.publish(markerArray);
 
         /**********************
         * Create the desired twist based on the twist message
@@ -184,8 +215,8 @@ int main(int argc, char* argv[])
         desiredTwist.dy = twist_msg.linear.y;
 
         // Add Gaussian noise to the commanded twist
-        desiredTwist.dth += d_th(get_random());
-        desiredTwist.dx += d_vx(get_random());
+        desiredTwist.dth += g_th(get_random());
+        desiredTwist.dx += g_vx(get_random());
 
         /**********************
         * Find the wheel velocities required to achieve that twist
@@ -202,8 +233,8 @@ int main(int argc, char* argv[])
         joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
 
         // Add wheel slip noise
-        slip_noiseL = left_noise * wheelVelocities.uL;
-        slip_noiseR = right_noise * wheelVelocities.uR;
+        slip_noiseL = slip_noise(get_random()) * wheelVelocities.uL;
+        slip_noiseR = slip_noise(get_random()) * wheelVelocities.uR;
 
         joint_msg.position[0] += slip_noiseL;
         joint_msg.position[1] += slip_noiseR;
@@ -229,8 +260,8 @@ int main(int argc, char* argv[])
         odom_trans.child_frame_id = turtle_frame_id;
 
         odom_trans.transform.translation.x = ninjaTurtle.getX();
-        odom_trans.transform.translation.y = ninjaTurtle(getY();
-        odom_trans.transform.trnalsation.z = 0.0;
+        odom_trans.transform.translation.y = ninjaTurtle.getY();
+        odom_trans.transform.translation.z = 0.0;
         odom_trans.transform.rotation = odom_quat;
         
         broadcaster.sendTransform(odom_trans);
@@ -240,10 +271,13 @@ int main(int argc, char* argv[])
          * *******************/
         path.header.frame_id = turtle_frame_id;
         path.header.stamp = current_time;
-        path.position.x = ninjaTurtle.getX();
-        path.position.y = ninjaTurtle.getY();
-        path.position.z = 0.0;
-        path_pub.publish(path);
+
+        geometry_msgs::Pose pose;
+        pose.position.x = ninjaTurtle.getX();
+        pose.position.y = ninjaTurtle.getY();
+        pose.position.z = 0.0;
+
+        path.poses.push_back(pose);
 
         /*********************
          * Update time and sleep
