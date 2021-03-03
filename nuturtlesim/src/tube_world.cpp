@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
         marker1.pose.position.z = 1.0;
         marker1.scale.x = tube_rad;
         marker1.scale.y = tube_rad;
-        marker1.scale.z = 1.0;
+        marker1.scale.z = 0.2;
         marker1.color.a = 0.5;
         marker1.color.r = 255/255;
         marker1.color.g = 192/255;
@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
         marker2.pose.position.z = 1.0;
         marker2.scale.x = tube_rad;
         marker2.scale.y = tube_rad;
-        marker2.scale.z = 1.0;
+        marker2.scale.z = 0.2;
         marker2.color.a = 0.5;
         marker2.color.r = 255/255;
         marker2.color.g = 192/255;

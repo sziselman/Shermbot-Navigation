@@ -8,4 +8,6 @@
         <param name="baud" value="115200"/>
     </node>
 
+    <node machine="turtlebot" pkg="hls_lfcd_lds_driver" name="hlds_laser_publisher" type="hlds_laser_publisher"/>
+
 </launch>

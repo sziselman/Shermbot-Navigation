@@ -34,6 +34,8 @@
         <param name="port" value="/dev/ttyACM0"/>
         <param name="baud" value="115200"/>
     </node>
+
+    <node machine="turtlebot" pkg="hls_lfcd_lds_driver" name="hlds_laser_publisher" type="hlds_laser_publisher"/>
     
     <node pkg="rigid2d" name="odometer" type="odometer" output="screen" machine="turtlebot"/>
 
