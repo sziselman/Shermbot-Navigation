@@ -51,6 +51,7 @@ namespace slam_library
             void predict(const Twist2D & tw);
 
             /// \brief updates the stateVector everytime a new landmark is encountered
+            /// uses sensor measuremnets
             /// \param j - the landmark j
             /// \param z - 2x1 column vector containing range-bearing measurements
             void update(int j, colvec z);
