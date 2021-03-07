@@ -1,3 +1,6 @@
+/// \file slam_library.cpp
+/// \brief a library that contains functions for implementing Extended Kalman Filter SLAM
+
 #include "nuslam/slam_library.hpp"
 #include "rigid2d/rigid2d.hpp"
 #include "rigid2d/diff_drive.hpp"

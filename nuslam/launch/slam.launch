@@ -14,4 +14,24 @@
     <node pkg="rviz" name="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f turtle" type="rviz"/>
 
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+    <param name="wheel_base" type="double" value="0.16"/>
+    <param name="wheel_radius" type="double" value="0.033"/>
+    <param name="odom_frame_id" type="string" value="odom"/>
+    <param name="body_frame_id" type="string" value="base_footprint"/>
+    <param name="left_wheel_joint" type="string" value="wheel_left_joint"/>
+    <param name="right_wheel_joint" type="string" value="wheel_right_joint"/>
+    <param name="slip_min" type="double" value="0"/>
+    <param name="slip_max" type="double" value="0"/>
+    <param name="twist_noise" type="double" value="0"/>
+
+    <param name="tube_radius" type="double" value="0.0762"/>
+    <rosparam param="tube1_location">[0.5, 0.5]</rosparam>
+    <rosparam param="tube2_location">[-0.5, -0.5]</rosparam>
+    <rosparam param="tube3_location">[1.0, 1.0]</rosparam>
+    <rosparam param="tube4_location">[-1.0, 1.0]</rosparam>
+    
+    <param name="world_frame_id" type="string" value="world"/>
+    <param name="turtle_frame_id" type="string" value="turtle"/>
+    <param name="tube_var" type="double" value="0"/>
+    <param name="max_range" type="double" value="1"/>
 </launch>

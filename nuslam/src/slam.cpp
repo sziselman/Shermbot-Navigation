@@ -1,4 +1,4 @@
-/// \file odometer.cpp
+/// \file slam.cpp
 /// \brief contains a node called odometry that will publish odometry messages in a standard ROS way
 ///
 /// PARAMETERS:
@@ -32,52 +32,57 @@
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
 
+#include <nuslam/slam_library.hpp>
+
+#include <armadillo>
 #include <string>
 #include <iostream>
 
-/****************************
-* Declare global variables
-****************************/
-static sensor_msgs::JointState joint_msg;
-static std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint, world_frame_id;
-
-static ros::Publisher odom_pub;
-static ros::Publisher path_pub;
-
-static ros::ServiceServer setPose_service;
-static ros::ServiceClient setPose_client;
-
-// static tf::TransformBroadcaster odom_broadcaster;
+/****************
+ * Declare global variables
+ * *************/
+static rigid2d::DiffDrive ninjaTurtle;
+static sensor_msgs::JointState joint_state_msg;
 
 static double wheelBase, wheelRad;
-static int frequency = 100;
-static nav_msgs::Path odom_path;
-static nav_msgs::Path slam_path;
 
-static rigid2d::DiffDrive ninjaTurtle;
-
-/****************************
-* Declare helper funcions
-****************************/
+/****************
+ * Helper functions
+ * *************/
 void jointStateCallback(const sensor_msgs::JointState msg);
 bool setPose(rigid2d::set_pose::Request & req, rigid2d::set_pose::Response &res);
 
-/****************************
-* Main Function
-****************************/
+/****************
+ * Main Function
+ * *************/
+
 int main(int argc, char* argv[])
 {
     using namespace rigid2d;
+    using namespace slam_library;
+    using namespace arma;
 
-    /****************************
-    * Initialize the node & node handle
-    ****************************/
+    /****************
+     * Initialize the node & node handle
+     * *************/
     ros::init(argc, argv, "slam");
     ros::NodeHandle n;
 
-    /****************************
-    * Reading parameters from parameter server
-    ****************************/
+    /****************
+     * Declare local variables
+     * *************/
+    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint, world_frame_id;
+
+    int frequency = 100;
+    int num = 4;              // number of landmarks
+
+    nav_msgs::Path odom_path;
+    nav_msgs::Path slam_path;
+    tf2_ros::TransformBroadcaster odom_broadcaster;
+
+    /****************
+     * Reading parameters from parameter server
+     * *************/
     n.getParam("wheel_base", wheelBase);
     n.getParam("wheel_radius", wheelRad);
     n.getParam("odom_frame_id", odom_frame_id);
@@ -86,27 +91,90 @@ int main(int argc, char* argv[])
     n.getParam("right_wheel_joint", right_wheel_joint);
     n.getParam("world_frame_id", world_frame_id);
 
-    /****************************
-    * Define publisher, subscriber, services and clients
-    ****************************/
-    odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
-    path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
-
-    setPose_service = n.advertiseService("set_pose", setPose);
-    setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
+    /****************
+     * Define publisher, subscriber, services and clients
+     * *************/
+    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
+    ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
+
+    ros::ServiceServer setPose_service = n.advertiseService("set_pose", setPose);
+    ros::ServiceClient setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
+
     ros::Rate loop_rate(frequency);
 
-    /****************************
-    * Set initial parameters of the differential drive robot to 0
-    ****************************/
+    /****************
+     * Set initial parameters of the differential drive robot to 0
+     * *************/
     ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    while (ros::ok())
+    while(ros::ok())
     {
         ros::spinOnce();
 
+        ros::Time current_time = ros::Time::now();
+
+        /****************
+         * Get the velocities from new wheel angles and update configuration
+         * *************/
+        Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+        ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+        /****************
+         * Publish a nav_msgs/Path showing the trajectory of the robot according only to wheel odometry
+         * *************/
+        geometry_msgs::PoseStamped odom_poseStamp;
+        odom_path.header.stamp = current_time;
+        odom_path.header.frame_id = world_frame_id;
+        odom_poseStamp.pose.position.x = ninjaTurtle.getX();
+        odom_poseStamp.pose.position.y = ninjaTurtle.getY();
+        odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
+
+        odom_path.poses.push_back(odom_poseStamp);
+        path_pub.publish(odom_path);
+
+        /****************
+         * Create quaternion from yaw
+         * *************/
+        tf2::Quaternion odom_quater;
+        odom_quater.setRPY(0, 0, ninjaTurtle.getTh());
+        geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
+
+        /****************
+         * Publish the transform over tf
+         * *************/
+        geometry_msgs::TransformStamped odom_trans;
+        odom_trans.header.stamp = current_time;
+        odom_trans.header.frame_id = odom_frame_id;
+        odom_trans.child_frame_id = body_frame_id;
+
+        odom_trans.transform.translation.x = ninjaTurtle.getX();
+        odom_trans.transform.translation.y = ninjaTurtle.getY();
+        odom_trans.transform.translation.z = 0.0;
+        odom_trans.transform.rotation = odom_quat;
+
+        odom_broadcaster.sendTransform(odom_trans);
+
+        /***************
+         * Publish the odometry message over ROS
+         * ************/
+        nav_msgs::Odometry odom_msg;
+        odom_msg.header.stamp = current_time;
+        odom_msg.header.frame_id = odom_frame_id;
+        odom_msg.pose.pose.position.x = ninjaTurtle.getX();
+        odom_msg.pose.pose.position.y = ninjaTurtle.getY();
+        odom_msg.pose.pose.position.z = 0.0;
+        odom_msg.pose.pose.orientation = odom_quat;
+
+        odom_msg.child_frame_id = body_frame_id;
+        odom_msg.twist.twist.linear.x = twist_vel.dx;
+        odom_msg.twist.twist.linear.y = twist_vel.dy;
+        odom_msg.twist.twist.linear.z = twist_vel.dth;
+
+        odom_pub.publish(odom_msg);
+        
         loop_rate.sleep();
     }
     return 0;
@@ -120,73 +188,7 @@ void jointStateCallback(const sensor_msgs::JointState msg)
 {
     using namespace rigid2d;
 
-    static tf2_ros::TransformBroadcaster odom_broadcaster;
-
-    ros::Time current_time = ros::Time::now();
-
-    /***********************
-    * Get the velocities from new wheel angles and update configuration
-    ***********************/
-    Twist2D twist_vel = ninjaTurtle.getTwist(msg.position[0], msg.position[1]);
-
-    ninjaTurtle(msg.position[0], msg.position[1]);
-
-    /***********************
-     * Publish a nav_msgs/Path showing the trajectory of the robot according only to wheel odometry
-     * ********************/
-    geometry_msgs::PoseStamped odom_poseStamp;
-    odom_path.header.stamp = current_time;
-    odom_path.header.frame_id = world_frame_id;
-    odom_poseStamp.pose.position.x = ninjaTurtle.getX();
-    odom_poseStamp.pose.position.y = ninjaTurtle.getY();
-    odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
-
-    odom_path.poses.push_back(odom_poseStamp);
-    path_pub.publish(odom_path);
-
-    /***********************
-    * Create a quaternion from yaw
-    ***********************/
-    // geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(ninjaTurtle.getTh());
-    tf2::Quaternion odom_quater;
-    odom_quater.setRPY(0, 0, ninjaTurtle.getTh());
-
-    geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
-
-    /***********************
-    * Publish the transform over tf
-    ***********************/
-    geometry_msgs::TransformStamped odom_trans;
-    odom_trans.header.stamp = current_time;
-    odom_trans.header.frame_id = odom_frame_id;
-    odom_trans.child_frame_id = body_frame_id;
-
-    odom_trans.transform.translation.x = ninjaTurtle.getX();
-    odom_trans.transform.translation.y = ninjaTurtle.getY();
-    odom_trans.transform.translation.z = 0.0;
-    odom_trans.transform.rotation = odom_quat;
-
-    odom_broadcaster.sendTransform(odom_trans);
-
-    /***********************
-    * Publish the odometry message over ROS
-    ***********************/
-    nav_msgs::Odometry odom_msg;
-    odom_msg.header.stamp = current_time;
-    odom_msg.header.frame_id = odom_frame_id;
-    odom_msg.pose.pose.position.x = ninjaTurtle.getX();
-    odom_msg.pose.pose.position.y = ninjaTurtle.getY();
-    odom_msg.pose.pose.position.z = 0.0;
-    odom_msg.pose.pose.orientation = odom_quat;
-
-    odom_msg.child_frame_id = body_frame_id;
-    odom_msg.twist.twist.linear.x = twist_vel.dx;
-    odom_msg.twist.twist.linear.y = twist_vel.dy;
-    odom_msg.twist.twist.linear.z = twist_vel.dth;
-
-    odom_pub.publish(odom_msg);
-
-    return ;
+    joint_state_msg = msg;
 }
 
 /// \brief setPose function for set_pose service
