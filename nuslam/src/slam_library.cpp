@@ -35,26 +35,44 @@ namespace slam_library
         return v;
     }
 
-    ExtendedKalman::ExtendedKalman(double xx, double yy, double theta, int num)
+    ExtendedKalman::ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R)
     {
-        n = num;
-        x = xx;
-        y = yy;
-        th = theta;
-        stateVec(0) = theta;
-        stateVec(1) = xx;
-        stateVec(2) = yy;
+        // size = arma::size(robotState) + arma::size(mapState);
+        n = mapState.n_elem / 2;
+        len = robotState.n_elem + mapState.n_elem;
+        stateVec = colvec(len);
 
-        processMean(0) = 0;
-        processMean(1) = 0;
-        processMean(2) = 0;
+        processNoise = Q;
+        sensorNoise = R;
+
+        // propagate the column vector v (state vector)
+        stateVec(0) = robotState(0);
+        stateVec(1) = robotState(1);
+        stateVec(2) = robotState(2);
+
+        for (int i = 3; i < len; ++i)
+        {
+            stateVec(i) = mapState(i - 3);
+        }
     }
 
-    colvec ExtendedKalman::getEstimate(const Twist2D & tw)
+    void ExtendedKalman::initCov(int num)
     {
-        colvec estimate;
+        cov = mat(3+2*num, 3+2*num, fill::zeros);
+        
+        for (int i = 3; i < 3+2*num; ++i)
+        {
+            cov(i, i) = INT_MAX;
+        }
+    }
 
-        colvec vec1(size, fill::zeros);
+    void ExtendedKalman::predict(const Twist2D & tw)
+    {
+        // update the estimate using the model
+
+        double th = stateVec(0);
+        
+        colvec vec1(len, fill::zeros);
 
         if (tw.dth == 0)
         {
@@ -67,23 +85,35 @@ namespace slam_library
             vec1(1) = -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
             vec1(2) = (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
         }
+        stateVec += vec1;
 
-        colvec vec2(size, fill::zeros);
-        colvec wt = MultiGauss(processMean, processNoise);
+        // propagate Q_bar
+        mat Q_bar(len, len, fill::zeros);
 
-        vec2(0) = wt(0);
-        vec2(1) = wt(1);
-        vec2(2) = wt(2);
+        Q_bar(span(0, 2), span(0, 2)) = processNoise(span(0, 2), span(0, 2));
 
-        estimate = stateVec + vec1 + vec2;
-        return estimate;
+        // propagate uncertainty using the linearized state transition model
+        mat covNew = getA(tw)*cov*getA(tw).t() + Q_bar;
+        cov = covNew;
+    }
+
+    void ExtendedKalman::update(int j, colvec z)
+    {
+        stateVec += KalmanGain(j) * (h(j) - z);
+
+        mat I(len, len, fill::eye);
+        mat covNew(len, len);
+        covNew = (I - KalmanGain(j)*getH(j))*cov;
+        cov = covNew;
     }
 
     mat ExtendedKalman::getA(const Twist2D & tw)
     {
-        mat B(size, size, fill::zeros);
+        mat B(len, len, fill::zeros);
 
-        mat I(size, size, fill::eye);
+        mat I(len, len, fill::eye);
+
+        double th = stateVec(0);
 
         if (tw.dth == 0)
         {
@@ -95,5 +125,46 @@ namespace slam_library
         }
         mat A = I + B;
         return A;
+    }
+
+    mat ExtendedKalman::getH(int j)
+    {
+        mat H(2, len, fill::zeros);
+
+        double dx = stateVec(3+2*j) - stateVec(1);
+        double dy = stateVec(4+2*j) - stateVec(2);
+        double d = pow(dx, 2) + pow(dy, 2);
+
+        H(0, 1) = -1;
+        H(1, 0) = -dx / sqrt(d);
+        H(1, 1) = dy / d;
+        H(2, 0) = -dy / sqrt(d);
+        H(2, 1) = -dx / d;
+        H(0, 3+2*(j-1)) = dx / sqrt(d);
+        H(1, 3+2*(j-1)) = -dy / d;
+        H(0, 4+2*(j-1)) = dy / sqrt(d);
+        H(1, 4+2*(j-1)) = dx / d;
+        return H;
+    }
+
+    colvec ExtendedKalman::h(int j)
+    {
+        colvec h_j(2);
+        double m_xj = stateVec(3+2*j);
+        double m_yj = stateVec(4+2*j);
+        double th = stateVec(0);
+        double x = stateVec(1);
+        double y = stateVec(2);
+
+        h_j(0) = sqrt(pow(m_xj - x, 2) + (pow(m_yj - y, 2)));
+        h_j(1) = atan2(m_yj - y, m_xj - x) - th;
+
+        return h_j;
+    }
+
+    mat ExtendedKalman::KalmanGain(int j)
+    {
+        mat K_i = cov * getH(j).t() * (getH(j) * cov * getH(j).t() + sensorNoise).i();
+        return K_i;
     }
 }
