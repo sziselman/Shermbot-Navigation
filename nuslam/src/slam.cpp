@@ -72,6 +72,13 @@ int main(int argc, char* argv[])
      * Declare local variables
      * *************/
     std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint, world_frame_id;
+    std::vector<double> tube1_loc;
+    std::vector<double> tube2_loc;
+    std::vector<double> tube3_loc;
+    std::vector<double> tube4_loc;
+    std::vector<double> rVec;
+    std::vector<double> qVec;
+    double tubeRad;
 
     int frequency = 100;
     int num = 4;              // number of landmarks
@@ -90,6 +97,13 @@ int main(int argc, char* argv[])
     n.getParam("left_wheel_joint", left_wheel_joint);
     n.getParam("right_wheel_joint", right_wheel_joint);
     n.getParam("world_frame_id", world_frame_id);
+    n.getParam("tube1_location", tube1_loc);
+    n.getParam("tube2_location", tube2_loc);
+    n.getParam("tube3_location", tube3_loc);
+    n.getParam("tube4_location", tube4_loc);
+    n.getParam("tube_radius", tubeRad);
+    n.getParam("R", rVec);
+    n.getParam("Q", qVec);
 
     /****************
      * Define publisher, subscriber, services and clients
@@ -109,6 +123,38 @@ int main(int argc, char* argv[])
      * *************/
     ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
+    /***************
+     * Create Extended Kalman filter object
+     * ************/
+    colvec mapState(2*num);
+    mapState(0) = tube1_loc[0];
+    mapState(1) = tube1_loc[1];
+    mapState(2) = tube2_loc[0];
+    mapState(3) = tube2_loc[1];
+    mapState(4) = tube3_loc[0];
+    mapState(5) = tube3_loc[1];
+    mapState(6) = tube4_loc[0];
+    mapState(7) = tube4_loc[1];
+
+    colvec robotState(3);
+    robotState(0) = ninjaTurtle.getTh();
+    robotState(1) = ninjaTurtle.getX();
+    robotState(2) = ninjaTurtle.getY();
+
+    mat Q(3, 3);
+    for (int i = 0; i < int(qVec.size()); ++i)
+    {
+        Q(i) = qVec[i];
+    }
+
+    mat R(2, 2);
+    for (int j = 0; j < int(rVec.size()); ++j)
+    {
+        R(j) = rVec[j];
+    }
+    
+    ExtendedKalman rafael = ExtendedKalman(robotState, mapState, Q, R);
+
     while(ros::ok())
     {
         ros::spinOnce();
@@ -121,6 +167,7 @@ int main(int argc, char* argv[])
         Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
 
         ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
+
 
         /****************
          * Publish a nav_msgs/Path showing the trajectory of the robot according only to wheel odometry

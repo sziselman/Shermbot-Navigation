@@ -57,13 +57,15 @@ namespace slam_library
         {
             stateVec(i) = mapState(i - 3);
         }
+
+        initCov();
     }
 
-    void ExtendedKalman::initCov(int num)
+    void ExtendedKalman::initCov()
     {
-        cov = mat(3+2*num, 3+2*num, fill::zeros);
+        cov = mat(len, len, fill::zeros);
         
-        for (int i = 3; i < 3+2*num; ++i)
+        for (int i = 3; i < len; ++i)
         {
             cov(i, i) = INT_MAX;
         }

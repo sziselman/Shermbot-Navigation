@@ -25,8 +25,8 @@ namespace slam_library
     {
         private:
             colvec stateVec;        // (3+2n)x1 state vector
-            mat processNoise;       // 3x3 process noise Q matrix
-            mat sensorNoise;        // 2x2 sensor noise R matrix
+            mat processNoise;       // 3x3 process noise Q matrix (Q needs to be bigger than R)
+            mat sensorNoise;        // 2x2 sensor noise R matrix 
             mat cov;                // (3+2n)x(3+2n) initial covariance matrix
 
             int len;                // size of the state vector
@@ -35,7 +35,7 @@ namespace slam_library
             /// \brief initialize the initial covariance matrix
             /// \param num - the number of landmarks
             /// \return (3+2n)x(3_2n) covariance matrix
-            void initCov(int num);
+            void initCov();
 
         public:
             /// \brief create a class for using Extended Kalman Filter SLAM

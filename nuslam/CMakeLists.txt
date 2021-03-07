@@ -164,7 +164,7 @@ add_dependencies(slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(slam ${catkin_LIBRARIES})
+target_link_libraries(slam slam_library ${catkin_LIBRARIES})
 target_link_libraries(slam ${ARMADILLO_LIBRARIES})
 
 #############
