@@ -23,6 +23,9 @@
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/PoseStamped.h>
 
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
+
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -42,14 +45,19 @@
  * Declare global variables
  * *************/
 static rigid2d::DiffDrive ninjaTurtle;
+static rigid2d::DiffDrive teenageMutant;
+
 static sensor_msgs::JointState joint_state_msg;
+static visualization_msgs::MarkerArray marker_array;
 
 static double wheelBase, wheelRad;
+static bool donatello = false;
 
 /****************
  * Helper functions
  * *************/
 void jointStateCallback(const sensor_msgs::JointState msg);
+void sensorCallback(const visualization_msgs::MarkerArray array);
 bool setPose(rigid2d::set_pose::Request & req, rigid2d::set_pose::Response &res);
 
 /****************
@@ -112,7 +120,7 @@ int main(int argc, char* argv[])
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
-
+    ros::Subscriber sensor_sub = n.subscribe("/fake_sensor", frequency, sensorCallback);
     ros::ServiceServer setPose_service = n.advertiseService("set_pose", setPose);
     ros::ServiceClient setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
 
@@ -122,6 +130,7 @@ int main(int argc, char* argv[])
      * Set initial parameters of the differential drive robot to 0
      * *************/
     ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
+    teenageMutant = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
     /***************
      * Create Extended Kalman filter object
@@ -153,7 +162,7 @@ int main(int argc, char* argv[])
         R(j) = rVec[j];
     }
     
-    ExtendedKalman rafael = ExtendedKalman(robotState, mapState, Q, R);
+    ExtendedKalman raphael = ExtendedKalman(robotState, mapState, Q, R);
 
     while(ros::ok())
     {
@@ -168,6 +177,28 @@ int main(int argc, char* argv[])
 
         ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
 
+        /****************
+         * If a marker array is received
+         * *************/
+        if (donatello)
+        {
+            // get velocities from new wheel angles and update config
+            Twist2D slam_twist = teenageMutant.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+            teenageMutant(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+            // predict: update the estimate using the model
+            raphael.predict(slam_twist);
+            
+            // for loop that goes through each marker that was measured
+            for (auto marker : marker_array.markers)
+            {
+                // put the marker x, y location in range-bearing form
+                colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y, teenageMutant.getTh());
+
+                // compute theoretical measurement, given the current state estimate
+                raphael.update(marker.id, rangeBearing);
+            }
+        }
 
         /****************
          * Publish a nav_msgs/Path showing the trajectory of the robot according only to wheel odometry
@@ -227,15 +258,20 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+/// \brief callback function for subscriber to the sensor message
+/// \param msg : the visualization message
+void sensorCallback(const visualization_msgs::MarkerArray array)
+{
+    marker_array = array;
+}
+
 /// \brief callback function for subscriber to joint state message
 /// Sends an odometry message and broadcasts a tf transform to update the configuration of the robot
-///
 /// \param msg : the joint state message
 void jointStateCallback(const sensor_msgs::JointState msg)
 {
-    using namespace rigid2d;
-
     joint_state_msg = msg;
+    donatello = true;
 }
 
 /// \brief setPose function for set_pose service

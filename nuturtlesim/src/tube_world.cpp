@@ -169,6 +169,8 @@ int main(int argc, char* argv[])
         visualization_msgs::MarkerArray markerArray;
 
         // marker1
+
+        // locations of tubes should be relative to the location of the robot
         marker1.header.frame_id = world_frame_id;
         marker1.header.stamp = current_time;
         marker1.ns = "real";

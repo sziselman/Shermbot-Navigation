@@ -5,7 +5,7 @@
         <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
     </group>
 
-    <group unless="$(eval arg('robot')=='local">
+    <group unless="$(eval arg('robot')=='local')">
         <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     </group>
 

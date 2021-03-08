@@ -38,6 +38,14 @@ namespace slam_library
         return v;
     }
 
+    colvec RangeBearing(double xRel, double yRel, double th)
+    {
+        colvec rangeBearing(2);
+        rangeBearing(0) = sqrt(pow(xRel, 2) + (pow(yRel, 2)));
+        rangeBearing(1) = atan2(yRel, xRel) - th;
+        return rangeBearing;
+    }
+
     ExtendedKalman::ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R)
     {
         // size = arma::size(robotState) + arma::size(mapState);
