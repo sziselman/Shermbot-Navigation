@@ -1,0 +1,9 @@
+repositories:
+  src/nuturtlebot:
+    type: git
+    url: https://github.com/ME495-Navigation/nuturtlebot
+    version: master
+  src/repository:
+    type: git
+    url: https://github.com/ME495-Navigation/assignment-sziselman
+    version: main

@@ -183,8 +183,8 @@ int main(int argc, char* argv[])
         {
             marker1.action = visualization_msgs::Marker::ADD;
         }
-        marker1.pose.position.x = tube1_loc[0] + tube_noise(get_random());
-        marker1.pose.position.y = tube1_loc[1] + tube_noise(get_random());
+        marker1.pose.position.x = -.5;
+        marker1.pose.position.y = -.5;
         marker1.pose.position.z = 1.0;
         marker1.scale.x = tube_rad;
         marker1.scale.y = tube_rad;
@@ -209,8 +209,8 @@ int main(int argc, char* argv[])
         {
             marker2.action = visualization_msgs::Marker::ADD;
         }
-        marker2.pose.position.x = tube2_loc[0] + tube_noise(get_random());
-        marker2.pose.position.y = tube2_loc[1] + tube_noise(get_random());
+        marker2.pose.position.x = 0.5;
+        marker2.pose.position.y = 0.5;
         marker2.pose.position.z = 1.0;
         marker2.scale.x = tube_rad;
         marker2.scale.y = tube_rad;
@@ -254,8 +254,8 @@ int main(int argc, char* argv[])
         slip_noiseL = slip_noise(get_random()) * wheelVelocities.uL;
         slip_noiseR = slip_noise(get_random()) * wheelVelocities.uR;
 
-        joint_msg.position[0] += slip_noiseL;
-        joint_msg.position[1] += slip_noiseR;
+        // joint_msg.position[0] += slip_noiseL;
+        // joint_msg.position[1] += slip_noiseR;
 
         /**********************
          * Update the configuration of the diff drive based on new wheel angles

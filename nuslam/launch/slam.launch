@@ -1,11 +1,11 @@
 <launch>
     <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
 
-    <group if="$(eval arg('robot')=='local')">
+    <group if="$(eval arg('robot')=='localhost')">
         <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
     </group>
 
-    <group unless="$(eval arg('robot')=='local')">
+    <group unless="$(eval arg('robot')=='localhost')">
         <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     </group>
 
@@ -28,7 +28,7 @@
     <rosparam param="tube1_location">[0.5, 0.5]</rosparam>
     <rosparam param="tube2_location">[-0.5, -0.5]</rosparam>
     <rosparam param="tube3_location">[1.0, 1.0]</rosparam>
-    <rosparam param="tube4_location">[-1.0, 1.0]</rosparam>
+    <rosparam param="tube4_location">[-1.0, -1.0]</rosparam>
     <rosparam param="R">[0.01, 0.0, 0.0, 0.01]</rosparam>
     <rosparam param="Q">[0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.1]</rosparam>
     <param name="world_frame_id" type="string" value="world"/>
