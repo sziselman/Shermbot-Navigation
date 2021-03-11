@@ -2,7 +2,7 @@
     <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
 
     <group if="$(eval arg('robot')=='localhost')">
-        <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
+        <node pkg="nurtlesim" name="tube_world" type="tube_world" output="screen"/>
     </group>
 
     <group unless="$(eval arg('robot')=='localhost')">

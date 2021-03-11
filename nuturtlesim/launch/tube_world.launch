@@ -1,7 +1,7 @@
 <launch>
     <arg name="use_rviz" default="true" doc="Controls whether rviz is launched-- default true"/>
 
-    <!-- <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/> -->
+    <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
     
     <node pkg="nuturtlesim" type="tube_world" name="tube_world" output="screen" />
 
@@ -20,6 +20,10 @@
     <param name="tube_radius" type="double" value="0.0762"/>
     <rosparam param="tube1_location">[0.5, 0.5]</rosparam>
     <rosparam param="tube2_location">[-0.5, -0.5]</rosparam>
+    <rosparam param="tube3_location">[1.0, 1.0]</rosparam>
+    <rosparam param="tube4_location">[-1.0, -1.0]</rosparam>
+    <rosparam param="tube5_location">[-0.75, 0.75]</rosparam>
+    <rosparam param="tube6_location">[0.75, -0.75]</rosparam>
     <param name="world_frame_id" type="string" value="world"/>
     <param name="turtle_frame_id" type="string" value="turtle"/>
     <param name="tube_var" type="double" value="0"/>
