@@ -18,6 +18,7 @@
     <param name="twist_noise" type="double" value="0.01"/>
 
     <param name="tube_radius" type="double" value="0.0762"/>
+    <param name="robot_radius" type="double" value="0.08"/>
     <rosparam param="tube1_location">[0.5, 0.5]</rosparam>
     <rosparam param="tube2_location">[-0.5, -0.5]</rosparam>
     <rosparam param="tube3_location">[1.0, 1.0]</rosparam>

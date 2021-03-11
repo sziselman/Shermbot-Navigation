@@ -86,8 +86,12 @@ namespace rigid2d
             /// \brief updates the configuration of the robot given updated wheel angles
             /// \param thLnew - the new left wheel angle
             /// \param thRnew - the new right wheel angle
-            /// \return the updated configuration
             DiffDrive & operator()(double thLnew, double thRnew);
+
+            /// \brief change the (x,y) location of the robot
+            /// \param dx - the difference in x-location
+            /// \param dy - the difference in y-location
+            DiffDrive & changeConfig(double dx, double dy);
 
     };
     

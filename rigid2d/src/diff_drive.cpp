@@ -149,4 +149,11 @@ namespace rigid2d
         os << '(' << dd.x << ',' << dd.y << ',' << dd.th << ')' << std::endl;
         return os;
     }
+
+    DiffDrive & DiffDrive::changeConfig(double dx, double dy)
+    {
+        x += dx;
+        y += dy;
+        return *this;
+    }
 }

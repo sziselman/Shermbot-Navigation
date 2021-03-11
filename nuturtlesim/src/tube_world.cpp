@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
      * Initialize local variables
      * ********/
     int frequency = 10;
-    double tubeRad, wheelRad, wheelBase, maxRange, twistNoise, slipMin, slipMax;
+    double tubeRad, wheelRad, wheelBase, maxRange, twistNoise, slipMin, slipMax, robotRad;
     bool latch = true;
     
     std::string world_frame_id, turtle_frame_id, left_wheel_joint, right_wheel_joint;
@@ -108,6 +108,7 @@ int main(int argc, char* argv[])
     n.getParam("twist_noise", twistNoise);
     n.getParam("slip_min", slipMin);
     n.getParam("slip_max", slipMax);
+    n.getParam("robot_radius", robotRad);
 
     /***********
      * Initialize mroe local variables
@@ -118,6 +119,7 @@ int main(int argc, char* argv[])
     double slipVar = slipMax - slipMean;
 
     std::normal_distribution<> slip_noise(slipMean, slipVar);
+    std::list<std::vector<double>> listOfTubes({tube1_loc, tube2_loc, tube3_loc, tube4_loc, tube5_loc, tube6_loc});
 
 
     /***********
@@ -355,6 +357,18 @@ int main(int argc, char* argv[])
             ninjaTurtle(joint_msg.position[0], joint_msg.position[1]);
 
             joint_pub.publish(joint_msg);
+
+            /***********
+             * COLLISION DETECTION
+             * ********/
+
+            // find distance between center of robot and center of tube
+            for (auto loc : listOfTubes)
+            {
+                ROS_INFO_STREAM(loc[0]);
+            }
+
+
 
             /***********
              * Publish a transform between world frame and turtle frame to indicate location of robot
