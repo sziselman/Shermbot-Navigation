@@ -49,6 +49,19 @@ static bool twist_received = false;
 void twistCallback(const geometry_msgs::Twist msg);
 
 /***********
+ * get_random() function
+ * ********/
+std::mt19937 & get_random()
+ {
+     // static variables inside a function are created once and persist for the remainder of the program
+     static std::random_device rd{}; 
+     static std::mt19937 mt{rd()};
+     // we return a reference to the pseudo-random number genrator object. This is always the
+     // same object every time get_random is called
+     return mt;
+ }
+
+/***********
  * Main Function
  * ********/
 int main(int argc, char* argv[])
@@ -65,7 +78,7 @@ int main(int argc, char* argv[])
      * Initialize local variables
      * ********/
     int frequency = 10;
-    double tubeRad, wheelRad, wheelBase, maxRange;
+    double tubeRad, wheelRad, wheelBase, maxRange, twistNoise, slipMin, slipMax;
     bool latch = true;
     
     std::string world_frame_id, turtle_frame_id, left_wheel_joint, right_wheel_joint;
@@ -92,6 +105,20 @@ int main(int argc, char* argv[])
     n.getParam("tube_radius", tubeRad);
     n.getParam("world_frame_id", world_frame_id);
     n.getParam("turtle_frame_id", turtle_frame_id);
+    n.getParam("twist_noise", twistNoise);
+    n.getParam("slip_min", slipMin);
+    n.getParam("slip_max", slipMax);
+
+    /***********
+     * Initialize mroe local variables
+     * ********/
+    std::normal_distribution<> gaus_twist(0, twistNoise);
+
+    double slipMean = (slipMin + slipMax) / 2;
+    double slipVar = slipMax - slipMean;
+
+    std::normal_distribution<> slip_noise(slipMean, slipVar);
+
 
     /***********
      * Define publisher, subscriber, service and clients
@@ -99,7 +126,7 @@ int main(int argc, char* argv[])
     ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
     ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", frequency, latch);
     ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency);
-    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
+    // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
 
     ros::Subscriber twist_sub = n.subscribe("/cmd_vel", frequency, twistCallback);
@@ -284,8 +311,8 @@ int main(int argc, char* argv[])
 
 
         // if twist message has been received
-        // if (twist_received)
-        // {
+        if (twist_received)
+        {
             /**************
              * Create the desired twist based on the message
              * ***********/
@@ -293,6 +320,12 @@ int main(int argc, char* argv[])
             desiredTwist.dth = twist_msg.angular.z;
             desiredTwist.dx = twist_msg.linear.x;
             desiredTwist.dy = twist_msg.linear.y;
+
+            /*************
+             * Add Gaussian noise to the commanded twist
+             * **********/
+            desiredTwist.dth += gaus_twist(get_random());
+            desiredTwist.dx += gaus_twist(get_random());
 
             /*************
              * Find wheel velocities required to achieve that twist
@@ -307,6 +340,13 @@ int main(int argc, char* argv[])
 
             joint_msg.position[0] += wheelVelocities.uL * (current_time - last_time).toSec();
             joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
+
+            /***********
+             * Add wheel slip noise using slip model nu*omega where nu is uniform random noise between
+             * slipMin and slipMax
+             * ********/
+            joint_msg.position[0] += wheelVelocities.uL * slip_noise(get_random());
+            joint_msg.position[1] += wheelVelocities.uR * slip_noise(get_random());
 
             /************
              * Update configuration of diff-drive robot based on new wheel angles
@@ -548,7 +588,7 @@ int main(int argc, char* argv[])
 
             path.poses.push_back(poseStamp);
             path_pub.publish(path);
-        // }
+        }
 
     last_time = current_time;
     loop_rate.sleep();
