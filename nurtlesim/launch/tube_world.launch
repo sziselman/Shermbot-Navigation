@@ -1,15 +1,12 @@
 <launch>
     <arg name="use_rviz" default="true" doc="Controls whether rviz is launched-- default true"/>
 
-    <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+    <!-- <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/> -->
     
     <node pkg="nuturtlesim" type="tube_world" name="tube_world" output="screen" />
 
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
+    <node name="rviz" pkg="rviz" args="-d $(find nuturtlesim)/config/model.rviz -f world" type="rviz"/>
 
-    <node name="rviz" pkg="rviz" args="-d $(find nuturtle_description)/config/model.rviz -f world" type="rviz"/>
-
-    <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
     <param name="wheel_base" type="double" value="0.16"/>
     <param name="wheel_radius" type="double" value="0.033"/>
     <param name="odom_frame_id" type="string" value="odom"/>
@@ -26,7 +23,7 @@
     <param name="world_frame_id" type="string" value="world"/>
     <param name="turtle_frame_id" type="string" value="turtle"/>
     <param name="tube_var" type="double" value="0"/>
-    <param name="max_range" type="double" value="1"/>
+    <param name="max_range" type="double" value="2"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
 </launch>

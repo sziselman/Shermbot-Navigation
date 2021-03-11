@@ -131,6 +131,9 @@ int main(int argc, char* argv[])
     ros::Publisher pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
     ros::Publisher marker_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10, true);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
+
+    ros::Publisher test_marker_pub = n.advertise<visualization_msgs::Marker>("/fake_marker", 10, true);
+
     ros::Subscriber sub = n.subscribe("/cmd_vel", frequency, twistCallback);
     tf2_ros::TransformBroadcaster broadcaster;
 
@@ -183,9 +186,16 @@ int main(int argc, char* argv[])
         {
             marker1.action = visualization_msgs::Marker::ADD;
         }
+
+        tf2::Quaternion marker_quat;
+        marker_quat.setRPY(0, 0, 0);
+
+        geometry_msgs::Quaternion markerQuat = tf2::toMsg(marker_quat);
+
         marker1.pose.position.x = -.5;
         marker1.pose.position.y = -.5;
         marker1.pose.position.z = 1.0;
+        marker1.pose.orientation = markerQuat;
         marker1.scale.x = tube_rad;
         marker1.scale.y = tube_rad;
         marker1.scale.z = 0.2;
@@ -194,10 +204,14 @@ int main(int argc, char* argv[])
         marker1.color.g = 192/255;
         marker1.color.b = 203/255;
 
+        marker1.frame_locked = true;
+
         markerArray.markers.push_back(marker1);
 
+        test_marker_pub.publish(marker1);
+
         // marker2
-        marker2.header.frame_id = world_frame_id;
+        marker2.header.frame_id = "world";
         marker2.header.stamp = current_time;
         marker2.ns = "real";
         marker2.id = 1;
@@ -212,6 +226,7 @@ int main(int argc, char* argv[])
         marker2.pose.position.x = 0.5;
         marker2.pose.position.y = 0.5;
         marker2.pose.position.z = 1.0;
+        marker2.pose.orientation = markerQuat;
         marker2.scale.x = tube_rad;
         marker2.scale.y = tube_rad;
         marker2.scale.z = 0.2;
@@ -219,6 +234,8 @@ int main(int argc, char* argv[])
         marker2.color.r = 255/255;
         marker2.color.g = 192/255;
         marker2.color.b = 203/255;
+
+        marker2.frame_locked = true;
 
         markerArray.markers.push_back(marker2);
 
