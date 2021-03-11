@@ -362,13 +362,16 @@ int main(int argc, char* argv[])
              * COLLISION DETECTION
              * ********/
 
-            // find distance between center of robot and center of tube
+            // find the tube th
             for (auto loc : listOfTubes)
             {
-                ROS_INFO_STREAM(loc[0]);
+                double distBetween = sqrt(pow(loc[0] - ninjaTurtle.getX(), 2) + pow(loc[1] - ninjaTurtle.getY(), 2));
+                if (distBetween <= (tubeRad + robotRad))
+                {
+                    // find the tangent line between the tube circle and the robot circle
+                    // have the robot move along that tangent line
+                }
             }
-
-
 
             /***********
              * Publish a transform between world frame and turtle frame to indicate location of robot
