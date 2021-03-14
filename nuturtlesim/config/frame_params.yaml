@@ -1,0 +1,7 @@
+# YAML file containing parameters for frame ids
+odom_frame_id: "odom"
+body_frame_id: "base_footprint"
+left_wheel_joint: "wheel_left_joint"
+right_wheel_joint: "wheel_right_joint"
+world_frame_id: "world"
+turtle_frame_id: "turtle"
