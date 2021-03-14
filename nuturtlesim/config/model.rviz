@@ -90,6 +90,10 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        turtle:
+          Value: true
+        world:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -97,7 +101,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          turtle:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1

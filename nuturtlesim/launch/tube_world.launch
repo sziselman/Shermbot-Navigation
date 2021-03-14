@@ -29,7 +29,7 @@
     <param name="world_frame_id" type="string" value="world"/>
     <param name="turtle_frame_id" type="string" value="turtle"/>
     <param name="tube_var" type="double" value="0"/>
-    <param name="max_range" type="double" value="2"/>
+    <param name="max_range" type="double" value="3"/>
 
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
 </launch>

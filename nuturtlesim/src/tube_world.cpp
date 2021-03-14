@@ -413,11 +413,17 @@ int main(int argc, char* argv[])
              * FAKE_SENSOR markers
              * Publish cylindrical markers relative to the location of the robot
              * ********/
+
+            // find the transformation between the world frame and the turtle frame
+            Vector2D transRobot(ninjaTurtle.getX(), ninjaTurtle.getY());
+            Transform2D T_wt = Transform2D(transRobot, ninjaTurtle.getTh());
+            Transform2D T_tw = T_wt.inv();
+
             visualization_msgs::MarkerArray markerArrayRel;
 
             // relative marker for tube 1
             visualization_msgs::Marker markerRel1;
-            markerRel1.header.frame_id = world_frame_id;
+            markerRel1.header.frame_id = turtle_frame_id;
             markerRel1.header.stamp = current_time;
             markerRel1.ns = "relative";
             markerRel1.id = 0;
@@ -429,9 +435,14 @@ int main(int argc, char* argv[])
             {
                 markerRel1.action = visualization_msgs::Marker::ADD;
             }
-            markerRel1.pose.position.x = tube1_loc[0] - ninjaTurtle.getX();
-            markerRel1.pose.position.y = tube1_loc[1] - ninjaTurtle.getY();
-            markerRel1.pose.position.z = 0.2;
+
+            // find the coordinates of tube 1 relative to the turtle
+            Vector2D tube1_w(tube1_loc[0], tube1_loc[1]);
+            Vector2D tube1_t = T_tw(tube1_w);
+
+            markerRel1.pose.position.x = tube1_t.x;
+            markerRel1.pose.position.y = tube1_t.y;
+            markerRel1.pose.position.z = 0.1;
             markerRel1.pose.orientation = markerQuat;
             markerRel1.scale.x = tubeRad;
             markerRel1.scale.y = tubeRad;
@@ -446,7 +457,7 @@ int main(int argc, char* argv[])
 
             // relative marker for tube 2
             visualization_msgs::Marker markerRel2;
-            markerRel2.header.frame_id = world_frame_id;
+            markerRel2.header.frame_id = turtle_frame_id;
             markerRel2.header.stamp = current_time;
             markerRel2.ns = "relative";
             markerRel2.id = 1;
@@ -458,9 +469,14 @@ int main(int argc, char* argv[])
             {
                 markerRel2.action = visualization_msgs::Marker::ADD;
             }
-            markerRel2.pose.position.x = tube2_loc[0] - ninjaTurtle.getX();
-            markerRel2.pose.position.y = tube2_loc[1] - ninjaTurtle.getY();
-            markerRel2.pose.position.z = 0.2;
+
+            // find the coordinates of tube 2 relative to the turtle
+            Vector2D tube2_w(tube2_loc[0], tube2_loc[1]);
+            Vector2D tube2_t = T_tw(tube2_w);
+
+            markerRel2.pose.position.x = tube2_t.x;
+            markerRel2.pose.position.y = tube2_t.y;
+            markerRel2.pose.position.z = 0.1;
             markerRel2.pose.orientation = markerQuat;
             markerRel2.scale.x = tubeRad;
             markerRel2.scale.y = tubeRad;
@@ -475,7 +491,7 @@ int main(int argc, char* argv[])
 
             // relative marker for tube 3
             visualization_msgs::Marker markerRel3;
-            markerRel3.header.frame_id = world_frame_id;
+            markerRel3.header.frame_id = turtle_frame_id;
             markerRel3.header.stamp = current_time;
             markerRel3.ns = "relative";
             markerRel3.id = 2;
@@ -487,9 +503,14 @@ int main(int argc, char* argv[])
             {
                 markerRel3.action = visualization_msgs::Marker::ADD;
             }
-            markerRel3.pose.position.x = tube3_loc[0] - ninjaTurtle.getX();
-            markerRel3.pose.position.y = tube3_loc[1] - ninjaTurtle.getY();
-            markerRel3.pose.position.z = 0.2;
+
+            // find the coordinates of tube 3 relative to the turtle
+            Vector2D tube3_w(tube3_loc[0], tube3_loc[1]);
+            Vector2D tube3_t = T_tw(tube3_w);
+
+            markerRel3.pose.position.x = tube3_t.x;
+            markerRel3.pose.position.y = tube3_t.y;
+            markerRel3.pose.position.z = 0.1;
             markerRel3.pose.orientation = markerQuat;
             markerRel3.scale.x = tubeRad;
             markerRel3.scale.y = tubeRad;
@@ -504,7 +525,7 @@ int main(int argc, char* argv[])
 
             // relative marker for tube 4
             visualization_msgs::Marker markerRel4;
-            markerRel4.header.frame_id = world_frame_id;
+            markerRel4.header.frame_id = turtle_frame_id;
             markerRel4.header.stamp = current_time;
             markerRel4.ns = "relative";
             markerRel4.id = 3;
@@ -516,9 +537,14 @@ int main(int argc, char* argv[])
             {
                 markerRel4.action = visualization_msgs::Marker::ADD;
             }
-            markerRel4.pose.position.x = tube4_loc[0] - ninjaTurtle.getX();
-            markerRel4.pose.position.y = tube4_loc[1] - ninjaTurtle.getY();
-            markerRel4.pose.position.z = 0.2;
+
+            // find the coordinates of tube 4 relative to the turtle
+            Vector2D tube4_w(tube4_loc[0], tube4_loc[1]);
+            Vector2D tube4_t = T_tw(tube4_w);
+
+            markerRel4.pose.position.x = tube4_t.x;
+            markerRel4.pose.position.y = tube4_t.y;
+            markerRel4.pose.position.z = 0.1;
             markerRel4.pose.orientation = markerQuat;
             markerRel4.scale.x = tubeRad;
             markerRel4.scale.y = tubeRad;
@@ -533,7 +559,7 @@ int main(int argc, char* argv[])
             
             // relative marker for tube 5
             visualization_msgs::Marker markerRel5;
-            markerRel5.header.frame_id = world_frame_id;
+            markerRel5.header.frame_id = turtle_frame_id;
             markerRel5.header.stamp = current_time;
             markerRel5.ns = "relative";
             markerRel5.id = 4;
@@ -545,9 +571,15 @@ int main(int argc, char* argv[])
             {
                 markerRel5.action = visualization_msgs::Marker::ADD;
             }
-            markerRel5.pose.position.x = tube5_loc[0] - ninjaTurtle.getX();
-            markerRel5.pose.position.y = tube5_loc[1] - ninjaTurtle.getY();
-            markerRel5.pose.position.z = 0.2;
+
+            // find the coordinates of tube 1 relative to the turtle
+            Vector2D tube5_w(tube5_loc[0], tube5_loc[1]);
+            Vector2D tube5_t = T_tw(tube5_w);
+
+
+            markerRel5.pose.position.x = tube5_t.x;
+            markerRel5.pose.position.y = tube5_t.y;
+            markerRel5.pose.position.z = 0.1;
             markerRel5.pose.orientation = markerQuat;
             markerRel5.scale.x = tubeRad;
             markerRel5.scale.y = tubeRad;
@@ -562,7 +594,7 @@ int main(int argc, char* argv[])
 
             // relative marker for tube 6
             visualization_msgs::Marker markerRel6;
-            markerRel6.header.frame_id = world_frame_id;
+            markerRel6.header.frame_id = turtle_frame_id;
             markerRel6.header.stamp = current_time;
             markerRel6.ns = "relative";
             markerRel6.id = 5;
@@ -574,9 +606,14 @@ int main(int argc, char* argv[])
             {
                 markerRel6.action = visualization_msgs::Marker::ADD;
             }
-            markerRel6.pose.position.x = tube6_loc[0] - ninjaTurtle.getX();
-            markerRel6.pose.position.y = tube6_loc[1] - ninjaTurtle.getY();
-            markerRel6.pose.position.z = 0.2;
+
+            // find the coordinates of tube 6 relative to the turtle
+            Vector2D tube6_w(tube6_loc[0], tube6_loc[1]);
+            Vector2D tube6_t = T_tw(tube6_w);
+
+            markerRel6.pose.position.x = tube6_t.x;
+            markerRel6.pose.position.y = tube6_t.y;
+            markerRel6.pose.position.z = 0.1;
             markerRel6.pose.orientation = markerQuat;
             markerRel6.scale.x = tubeRad;
             markerRel6.scale.y = tubeRad;
@@ -591,8 +628,6 @@ int main(int argc, char* argv[])
 
             marker_rel_pub.publish(markerArrayRel);
 
-            twist_received = false;
-
             /**************
              * Publish a message to show the actual robot trajectory
              * ***********/
@@ -605,6 +640,7 @@ int main(int argc, char* argv[])
 
             path.poses.push_back(poseStamp);
             path_pub.publish(path);
+            twist_received = false;
         }
 
     last_time = current_time;
