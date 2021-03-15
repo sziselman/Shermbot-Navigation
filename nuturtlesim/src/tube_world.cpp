@@ -368,8 +368,11 @@ int main(int argc, char* argv[])
                 double distBetween = sqrt(pow(loc[0] - ninjaTurtle.getX(), 2) + pow(loc[1] - ninjaTurtle.getY(), 2));
                 if (distBetween <= (tubeRad + robotRad))
                 {
-                    // find the tangent line between the tube circle and the robot circle
+                    double dx = (loc[0] - ninjaTurtle.getX())/20;
+                    double dy = (loc[1] - ninjaTurtle.getY())/20;
+                    
                     // have the robot move along that tangent line
+                    ninjaTurtle.changeConfig(dy, dx);
                 }
             }
 
