@@ -361,8 +361,6 @@ int main(int argc, char* argv[])
             /***********
              * COLLISION DETECTION
              * ********/
-
-            // find the tube th
             for (auto loc : listOfTubes)
             {
                 double distBetween = sqrt(pow(loc[0] - ninjaTurtle.getX(), 2) + pow(loc[1] - ninjaTurtle.getY(), 2));
