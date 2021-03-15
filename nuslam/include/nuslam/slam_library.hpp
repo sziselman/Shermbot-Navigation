@@ -21,7 +21,7 @@ namespace slam_library
     /// \param xRel the x distance of the marker relative to the robot
     /// \param yRel the y distance of the marker relative to the robot
     /// \param th the angle of the robot
-    colvec RangeBearing(double xRel, double yRel, double th);
+    colvec RangeBearing(double xRel, double yRel);
 
     /// \brief a class that contains functions when utilizing Extended Kalman Filter
     /// At each time step t, the EKF takes odometry (u) and sensor measurements (z)
@@ -68,7 +68,7 @@ namespace slam_library
             /// \brief gets the matrix A_k using the state k-1
             /// \param tw - the twist command
             /// \return a (3+2n)x(3+2n) matrix
-            mat getA(const Twist2D & tw);
+            mat getA(double th_prev, const Twist2D & tw);
 
             /// \brief gets the matrix H_j
             /// \param j - the landmark j

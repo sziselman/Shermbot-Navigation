@@ -38,11 +38,11 @@ namespace slam_library
         return v;
     }
 
-    colvec RangeBearing(double xRel, double yRel, double th)
+    colvec RangeBearing(double xRel, double yRel)
     {
         colvec rangeBearing(2);
         rangeBearing(0) = sqrt(pow(xRel, 2) + (pow(yRel, 2)));
-        rangeBearing(1) = atan2(yRel, xRel) - th;
+        rangeBearing(1) = atan2(yRel, xRel);
         return rangeBearing;
     }
 
@@ -89,27 +89,25 @@ namespace slam_library
         // update the estimate using the model
 
         double th = stateVec(0);
-        
-        // colvec vec1(len, fill::zeros);
 
+        double dq_th, dq_x, dq_y;
+
+        // zero rotational velocity
         if (tw.dth == 0)
         {
-            // vec1(0) = 0;
-            stateVec(0) += 0.0;
-            // vec1(1) = tw.dx * cos(th);
-            stateVec(1) += tw.dx * cos(th);
-            // vec1(2) = tw.dx * sin(th);
-            stateVec(2) += tw.dx * sin(th);
-        } else
+            dq_th = 0.0;
+            dq_x = tw.dx * cos(th);
+            dq_y = tw.dx * sin(th);
+        } else  // non-zero rotational velocity
         {
-            // vec1(0) = tw.dth;
-            stateVec(0) += 0.0;
-            // vec1(1) = -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
-            stateVec(1) += -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
-            // vec1(2) = (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
-            stateVec(2) += (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
+            dq_th = tw.dth; 
+            dq_x = -(tw.dx / tw.dth) * sin(th) + (tw.dx / tw.dth) * sin(th + tw.dth);
+            dq_y = (tw.dx / tw.dth) * cos(th) - (tw.dx / tw.dth) * cos(th + tw.dth);
         }
-        // stateVec += vec1;
+        
+        stateVec(0) += dq_th; 
+        stateVec(1) += dq_x;
+        stateVec(2) += dq_y;
 
         // propagate Q_bar
         mat Q_bar(len, len, fill::zeros);
@@ -117,37 +115,51 @@ namespace slam_library
         Q_bar(span(0, 2), span(0, 2)) = processNoise(span(0, 2), span(0, 2));
 
         // propagate uncertainty using the linearized state transition model
-        mat covNew = getA(tw)*cov*getA(tw).t() + Q_bar;
+        mat A(len, len);
+        A = getA(th, tw);
+
+        mat covNew = A * cov * A.t() + Q_bar;
         cov = covNew;
         return *this;
     }
 
     ExtendedKalman & ExtendedKalman::update(int j, colvec z)
     {
-        stateVec += KalmanGain(j) * (h(j) - z);
+        // get matrices H_j, K_j
+        mat K_j(len, 2);
+        K_j = KalmanGain(j);
 
-        // mat I(len, len, fill::eye);
-        // mat covNew(len, len);
-        // covNew = (I - KalmanGain(j)*getH(j))*cov;
-        // cov = covNew;
+        mat H_j(2, len);
+        H_j = getH(j);
+
+        // compute theoretical measurement given the current state estimate
+        colvec z_hat(2);
+        z_hat = h(j);
+
+        // compute the posterior state update
+        stateVec += K_j * (z_hat - z);
+
+        // compute the posterior covariance
+        mat I(len, len, fill::eye);
+        mat covNew(len, len);
+        covNew = (I - K_j * H_j) * cov;
+        cov = covNew;
         return *this;
     }
 
-    mat ExtendedKalman::getA(const Twist2D & tw)
+    mat ExtendedKalman::getA(double th_prev, const Twist2D & tw)
     {
         mat B(len, len, fill::zeros);
 
         mat I(len, len, fill::eye);
 
-        double th = stateVec(0);
-
         if (tw.dth == 0)
         {
-            B(0, 1) = -tw.dx * sin(th);
-            B(0, 2) = tw.dx * cos(th);
+            B(1, 0) = -tw.dx * sin(th_prev);
+            B(2, 0) = tw.dx * cos(th_prev);
         } else {
-            B(0, 1) = -(tw.dx/tw.dth)*cos(th) + (tw.dx/tw.dth)*cos(th + tw.dth);
-            B(0, 2) = -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th + tw.dth);
+            B(1, 0) = -(tw.dx / tw.dth) * cos(th_prev) + (tw.dx / tw.dth) * cos(th_prev + tw.dth);
+            B(2, 0) = -(tw.dx / tw.dth) * sin(th_prev) + (tw.dx / tw.dth) * sin(th_prev + tw.dth);
         }
         mat A = I + B;
         return A;
@@ -182,8 +194,11 @@ namespace slam_library
         double x = stateVec(1);
         double y = stateVec(2);
 
-        h_j(0) = sqrt(pow(m_xj - x, 2) + (pow(m_yj - y, 2)));
-        h_j(1) = atan2(m_yj - y, m_xj - x) - th;
+        double dx = m_xj - x;
+        double dy = m_yj - y;
+
+        h_j(0) = sqrt(pow(dx, 2) + pow(dy, 2));
+        h_j(1) = normalize_angle(atan2(dy, dx) - th);
 
         return h_j;
     }

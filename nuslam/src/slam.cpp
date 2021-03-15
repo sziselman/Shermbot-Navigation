@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
             /***********
              * Get twist from new wheel angles and update configuration
              * ********/
-            Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+            // Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
 
             ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
 
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
                     int j = marker.id + 1;
 
                     // put the marker (x,y) location in range-bearing form
-                    colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y, teenageMutant.getTh());
+                    colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y);
 
                     // compute theoretical measurements, given the current state estimate
 
@@ -250,6 +250,9 @@ int main(int argc, char* argv[])
             tf2::Quaternion mapOdomQuater;
             
             colvec currentStateVec = raphael.getStateVec();
+            ROS_INFO_STREAM(currentStateVec(0));
+            ROS_INFO_STREAM(currentStateVec(1));
+            ROS_INFO_STREAM(currentStateVec(2));
 
             mapOdomQuater.setRPY(0.0, 0.0, currentStateVec(0) - ninjaTurtle.getTh());
             geometry_msgs::Quaternion mapOdomQuat = tf2::toMsg(mapOdomQuater);
