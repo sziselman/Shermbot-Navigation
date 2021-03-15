@@ -8,19 +8,21 @@ namespace rigid2d
     double normalize_angle(double rad)
     {
         double radMod, newRad;
+
         radMod = std::fmod(rad, 2*PI);
+        
         if (radMod > 0 && radMod < PI)
         {
             newRad = radMod;
-        } else if (radMod > PI && radMod < 2*PI)
-        {
-            newRad = radMod - (2 * PI);
-        } else if (radMod < -PI && radMod < 0)
+        } else if (radMod < 0 && radMod > -PI)
         {
             newRad = radMod;
-        } else if (radMod < -2*PI && radMod < -PI)
+        } else if (radMod > 0 && radMod > PI)
         {
-            newRad = radMod + (2 * PI);
+            newRad = radMod - 2*PI;
+        } else if (radMod < 0 && radMod < -PI)
+        {
+            newRad = radMod + 2*PI;
         }
         return newRad;
     }

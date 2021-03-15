@@ -42,7 +42,7 @@ namespace slam_library
     {
         colvec rangeBearing(2);
         rangeBearing(0) = sqrt(pow(xRel, 2) + (pow(yRel, 2)));
-        rangeBearing(1) = atan2(yRel, xRel);
+        rangeBearing(1) = normalize_angle(atan2(yRel, xRel));
         return rangeBearing;
     }
 

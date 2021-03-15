@@ -116,8 +116,9 @@ int main(int argc, char* argv[])
     /*********
      * Define publishers, subscribers, services and clients
      ********/
-    ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
-    ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
+    // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
+    // ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
+    ros::Publisher slamPath_pub = n.advertise<nav_msgs::Path>("/slam_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
     ros::Subscriber sensor_sub = n.subscribe("/fake_sensor", frequency, sensorCallback);
@@ -167,11 +168,11 @@ int main(int argc, char* argv[])
 
     ExtendedKalman raphael = ExtendedKalman(robotState, mapState, Q, R);
 
-    colvec currentState(3+2*num);
+    // colvec currentState(3+2*num);
 
-    currentState = raphael.getStateVec();
+    // currentState = raphael.getStateVec();
 
-    ROS_INFO_STREAM(currentState(0));
+    // ROS_INFO_STREAM(currentState(0));
 
     while (ros::ok())
     {
@@ -196,7 +197,7 @@ int main(int argc, char* argv[])
              * *******/
             if (markerArray_flag)
             {
-                // get velocities from new wheel angle
+                // // get velocities from new wheel angle
                 // made a separate diffdrive object since marker array messages may be sent at a different freuqancy
                 Twist2D slam_twist = teenageMutant.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
 
@@ -217,9 +218,9 @@ int main(int argc, char* argv[])
 
                     raphael.update(j, rangeBearing);
 
-                    colvec currentState(3+2*num);
+                //     colvec currentState(3+2*num);
 
-                    currentState = raphael.getStateVec();
+                //     currentState = raphael.getStateVec();
                 }
                 
                 markerArray_flag = false;
