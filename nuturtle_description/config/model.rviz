@@ -109,12 +109,6 @@ Visualization Manager:
           Value: true
         imu_link:
           Value: true
-        odom:
-          Value: true
-        wheel_left_link:
-          Value: true
-        wheel_right_link:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -122,19 +116,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        odom:
-          base_footprint:
-            base_link:
-              base_scan:
-                {}
-              caster_back_link:
-                {}
-              imu_link:
-                {}
-              wheel_left_link:
-                {}
-              wheel_right_link:
-                {}
+        {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -222,7 +204,7 @@ Visualization Manager:
   Global Options:
     Background Color: 108; 108; 108
     Default Light: true
-    Fixed Frame: odom
+    Fixed Frame: turtle
     Frame Rate: 30
   Name: root
   Tools:
@@ -283,4 +265,4 @@ Window Geometry:
     collapsed: true
   Width: 1855
   X: 1985
-  Y: 294
+  Y: 220

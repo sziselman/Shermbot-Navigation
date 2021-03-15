@@ -41,9 +41,9 @@
 #include <string>
 #include <iostream>
 
-/****************
+/**********
  * Declare global variables
- * *************/
+ * *******/
 static rigid2d::DiffDrive ninjaTurtle;
 static rigid2d::DiffDrive teenageMutant;
 
@@ -51,55 +51,53 @@ static sensor_msgs::JointState joint_state_msg;
 static visualization_msgs::MarkerArray marker_array;
 
 static double wheelBase, wheelRad;
-static bool donatello = false;
+static bool jointState_flag = false;
+static bool markerArray_flag = false;
 
-/****************
- * Helper functions
- * *************/
+/**********
+ * Helper Functions
+ * *******/
 void jointStateCallback(const sensor_msgs::JointState msg);
 void sensorCallback(const visualization_msgs::MarkerArray array);
-bool setPose(rigid2d::set_pose::Request & req, rigid2d::set_pose::Response &res);
+bool setPose(rigid2d::set_pose::Request & req, rigid2d::set_pose::Response & res);
 
-/****************
+/*********
  * Main Function
- * *************/
-
+ * ******/
 int main(int argc, char* argv[])
 {
     using namespace rigid2d;
     using namespace slam_library;
     using namespace arma;
 
-    /****************
+    /*********
      * Initialize the node & node handle
-     * *************/
+     * ******/
     ros::init(argc, argv, "slam");
     ros::NodeHandle n;
 
-    /****************
+    /*********
      * Declare local variables
-     * *************/
-    std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint, world_frame_id;
-    std::vector<double> tube1_loc;
-    std::vector<double> tube2_loc;
-    std::vector<double> tube3_loc;
-    std::vector<double> tube4_loc;
-    std::vector<double> rVec;
-    std::vector<double> qVec;
+     * ******/
+    std::string left_wheel_joint, right_wheel_joint, world_frame_id, turtle_frame_id;
+    std::string map_frame_id, odom_frame_id, body_frame_id;
+    std::vector<double> tube1_loc, tube2_loc, tube3_loc, tube4_loc, tube5_loc, tube6_loc;
+    std::vector<double> rVec, qVec;
     double tubeRad;
 
-    int frequency = 100;
-    int num = 4;              // number of landmarks
+    int frequency=10;
+    int num = 6;
 
     nav_msgs::Path odom_path;
     nav_msgs::Path slam_path;
-    tf2_ros::TransformBroadcaster odom_broadcaster;
+    tf2_ros::TransformBroadcaster broadcaster;
 
-    /****************
-     * Reading parameters from parameter server
-     * *************/
+    /*********
+     * Read parameters from parameter server
+     * ******/
     n.getParam("wheel_base", wheelBase);
     n.getParam("wheel_radius", wheelRad);
+    n.getParam("map_frame_id", map_frame_id);
     n.getParam("odom_frame_id", odom_frame_id);
     n.getParam("body_frame_id", body_frame_id);
     n.getParam("left_wheel_joint", left_wheel_joint);
@@ -109,32 +107,33 @@ int main(int argc, char* argv[])
     n.getParam("tube2_location", tube2_loc);
     n.getParam("tube3_location", tube3_loc);
     n.getParam("tube4_location", tube4_loc);
+    n.getParam("tube5_location", tube5_loc);
+    n.getParam("tube6_location", tube6_loc);
     n.getParam("tube_radius", tubeRad);
     n.getParam("R", rVec);
     n.getParam("Q", qVec);
 
-    /****************
-     * Define publisher, subscriber, services and clients
-     * *************/
+    /*********
+     * Define publishers, subscribers, services and clients
+     ********/
     ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
     ros::Subscriber sensor_sub = n.subscribe("/fake_sensor", frequency, sensorCallback);
+
     ros::ServiceServer setPose_service = n.advertiseService("set_pose", setPose);
     ros::ServiceClient setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
 
-    ros::Rate loop_rate(frequency);
-
-    /****************
+    /*********
      * Set initial parameters of the differential drive robot to 0
-     * *************/
+     * ******/
     ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
     teenageMutant = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    /***************
-     * Create Extended Kalman filter object
-     * ************/
+    /*********
+     * Create EKF SLAM object
+     * ******/
     colvec mapState(2*num);
     mapState(0) = tube1_loc[0];
     mapState(1) = tube1_loc[1];
@@ -144,6 +143,10 @@ int main(int argc, char* argv[])
     mapState(5) = tube3_loc[1];
     mapState(6) = tube4_loc[0];
     mapState(7) = tube4_loc[1];
+    mapState(8) = tube5_loc[0];
+    mapState(9) = tube5_loc[1];
+    mapState(10) = tube6_loc[0];
+    mapState(11) = tube6_loc[1];
 
     colvec robotState(3);
     robotState(0) = ninjaTurtle.getTh();
@@ -156,113 +159,169 @@ int main(int argc, char* argv[])
         Q(i) = qVec[i];
     }
 
-    mat R(2, 2);
+    mat R(2,2);
     for (int j = 0; j < int(rVec.size()); ++j)
     {
         R(j) = rVec[j];
     }
-    
+
     ExtendedKalman raphael = ExtendedKalman(robotState, mapState, Q, R);
 
-    while(ros::ok())
+    colvec currentState(3+2*num);
+
+    currentState = raphael.getStateVec();
+
+    ROS_INFO_STREAM(currentState(0));
+
+    while (ros::ok())
     {
         ros::spinOnce();
 
         ros::Time current_time = ros::Time::now();
 
-        /****************
-         * Get the velocities from new wheel angles and update configuration
-         * *************/
-        Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
-
-        ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
-
-        /****************
-         * If a marker array is received
-         * *************/
-        if (donatello)
+        /**********
+         * If a joint state message is received
+         * *******/
+        if (jointState_flag)
         {
-            // get velocities from new wheel angles and update config
-            Twist2D slam_twist = teenageMutant.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
-            teenageMutant(joint_state_msg.position[0], joint_state_msg.position[1]);
+            /***********
+             * Get twist from new wheel angles and update configuration
+             * ********/
+            Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
 
-            // predict: update the estimate using the model
-            raphael.predict(slam_twist);
-            
-            // for loop that goes through each marker that was measured
-            for (auto marker : marker_array.markers)
+            ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+            /**********
+             * If a marker array is received
+             * *******/
+            if (markerArray_flag)
             {
-                // put the marker x, y location in range-bearing form
-                colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y, teenageMutant.getTh());
+                // get velocities from new wheel angle
+                // made a separate diffdrive object since marker array messages may be sent at a different freuqancy
+                Twist2D slam_twist = teenageMutant.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
 
-                // compute theoretical measurement, given the current state estimate
-                raphael.update(marker.id, rangeBearing);
+                teenageMutant(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+                // predict: update the estimate using the model
+                raphael.predict(slam_twist);
+
+                // for loop that goes through each marker that was measured
+                for (auto marker: marker_array.markers)
+                {
+                    int j = marker.id + 1;
+
+                    // put the marker (x,y) location in range-bearing form
+                    colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y, teenageMutant.getTh());
+
+                    // compute theoretical measurements, given the current state estimate
+
+                    raphael.update(j, rangeBearing);
+
+                    colvec currentState(3+2*num);
+
+                    currentState = raphael.getStateVec();
+                }
+                
+                markerArray_flag = false;
             }
+
+            /**********
+             * Publish a transform from world to map
+             * *******/
+            tf2::Quaternion worldMapQuater;
+            worldMapQuater.setRPY(0.0, 0.0, 0.0);
+            geometry_msgs::Quaternion worldMapQuat = tf2::toMsg(worldMapQuater);
+
+            geometry_msgs::TransformStamped worldMapTrans;
+            worldMapTrans.header.stamp = current_time;
+            worldMapTrans.header.frame_id = world_frame_id;
+            worldMapTrans.child_frame_id = map_frame_id;
+
+            worldMapTrans.transform.translation.x = 0.0;
+            worldMapTrans.transform.translation.y = 0.0;
+            worldMapTrans.transform.translation.z = 0.0;
+            worldMapTrans.transform.rotation = worldMapQuat;
+
+            broadcaster.sendTransform(worldMapTrans);
+
+            /**********
+             * Pubish a transfrom from map to odom
+             * *******/
+            tf2::Quaternion mapOdomQuater;
+            
+            colvec currentStateVec = raphael.getStateVec();
+
+            mapOdomQuater.setRPY(0.0, 0.0, currentStateVec(0) - ninjaTurtle.getTh());
+            geometry_msgs::Quaternion mapOdomQuat = tf2::toMsg(mapOdomQuater);
+
+            geometry_msgs::TransformStamped mapOdomTrans;
+            mapOdomTrans.header.stamp = current_time;
+            mapOdomTrans.header.frame_id = map_frame_id;
+            mapOdomTrans.child_frame_id = odom_frame_id;
+
+            mapOdomTrans.transform.translation.x = currentStateVec(1) - ninjaTurtle.getX();
+            mapOdomTrans.transform.translation.y = currentStateVec(2) - ninjaTurtle.getY();
+            mapOdomTrans.transform.translation.z = 0.0;
+            mapOdomTrans.transform.rotation = mapOdomQuat;
+
+            broadcaster.sendTransform(mapOdomTrans);
+
+            // /**********
+            //  * Publish a transform from odom to body
+            //  * *******/
+            // tf2::Quaternion odomBodyQuater;
+            // odomBodyQuater.setRPY(0.0, 0.0, ninjaTurtle.getTh());
+            // geometry_msgs::Quaternion odomBodyQuat = tf2::toMsg(odomBodyQuater);
+
+            // geometry_msgs::TransformStamped odomBodyTrans;
+            // odomBodyTrans.header.stamp = current_time;
+            // odomBodyTrans.header.frame_id = odom_frame_id;
+            // odomBodyTrans.child_frame_id = body_frame_id;
+
+            // odomBodyTrans.transform.translation.x = ninjaTurtle.getX();
+            // odomBodyTrans.transform.translation.y = ninjaTurtle.getY();
+            // odomBodyTrans.transform.translation.z = 0.0;
+            // odomBodyTrans.transform.rotation = odomBodyQuat;
+
+            // broadcaster.sendTransform(odomBodyTrans);
+
+            // /**********
+            //  * Publish a nav_msgs/Path showing the trajectory of the robot according only to the wheel odometry
+            //  * *******/
+            // geometry_msgs::PoseStamped odom_poseStamp;
+            // odom_path.header.stamp = current_time;
+            // odom_path.header.frame_id = world_frame_id;
+            // odom_poseStamp.pose.position.x = ninjaTurtle.getX();
+            // odom_poseStamp.pose.position.y = ninjaTurtle.getY();
+            // odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
+
+            // odom_path.poses.push_back(odom_poseStamp);
+            // path_pub.publish(odom_path);
+
+            // /*********
+            //  * Publish a nav_msgs/Path showing the trajectory of the robot according to the slam algorithm
+            //  * ******/
+            // geometry_msgs::PoseStamped slam_poseStamp;
+            // slam_path.header.stamp = current_time;
+            // slam_path.header.frame_id = world_frame_id;
+            // slam_poseStamp.pose.position.x = currentStateVec(1);
+            // slam_poseStamp.pose.position.y = currentStateVec(2);
+            // slam_poseStamp.pose.orientation.z = currentStateVec(0);
+
+            // slam_path.poses.push_back(slam_poseStamp);
+            // path_pub.publish(slam_path);
+
+            jointState_flag = false;
         }
-
-        /****************
-         * Publish a nav_msgs/Path showing the trajectory of the robot according only to wheel odometry
-         * *************/
-        geometry_msgs::PoseStamped odom_poseStamp;
-        odom_path.header.stamp = current_time;
-        odom_path.header.frame_id = world_frame_id;
-        odom_poseStamp.pose.position.x = ninjaTurtle.getX();
-        odom_poseStamp.pose.position.y = ninjaTurtle.getY();
-        odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
-
-        odom_path.poses.push_back(odom_poseStamp);
-        path_pub.publish(odom_path);
-
-        /****************
-         * Create quaternion from yaw
-         * *************/
-        tf2::Quaternion odom_quater;
-        odom_quater.setRPY(0, 0, ninjaTurtle.getTh());
-        geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
-
-        /****************
-         * Publish the transform over tf
-         * *************/
-        geometry_msgs::TransformStamped odom_trans;
-        odom_trans.header.stamp = current_time;
-        odom_trans.header.frame_id = odom_frame_id;
-        odom_trans.child_frame_id = body_frame_id;
-
-        odom_trans.transform.translation.x = ninjaTurtle.getX();
-        odom_trans.transform.translation.y = ninjaTurtle.getY();
-        odom_trans.transform.translation.z = 0.0;
-        odom_trans.transform.rotation = odom_quat;
-
-        odom_broadcaster.sendTransform(odom_trans);
-
-        /***************
-         * Publish the odometry message over ROS
-         * ************/
-        nav_msgs::Odometry odom_msg;
-        odom_msg.header.stamp = current_time;
-        odom_msg.header.frame_id = odom_frame_id;
-        odom_msg.pose.pose.position.x = ninjaTurtle.getX();
-        odom_msg.pose.pose.position.y = ninjaTurtle.getY();
-        odom_msg.pose.pose.position.z = 0.0;
-        odom_msg.pose.pose.orientation = odom_quat;
-
-        odom_msg.child_frame_id = body_frame_id;
-        odom_msg.twist.twist.linear.x = twist_vel.dx;
-        odom_msg.twist.twist.linear.y = twist_vel.dy;
-        odom_msg.twist.twist.linear.z = twist_vel.dth;
-
-        odom_pub.publish(odom_msg);
-        
-        loop_rate.sleep();
     }
-    return 0;
 }
 
 /// \brief callback function for subscriber to the sensor message
-/// \param msg : the visualization message
+/// \param msg : the visualizaiton message
 void sensorCallback(const visualization_msgs::MarkerArray array)
 {
     marker_array = array;
+    markerArray_flag = true;
 }
 
 /// \brief callback function for subscriber to joint state message
@@ -271,7 +330,7 @@ void sensorCallback(const visualization_msgs::MarkerArray array)
 void jointStateCallback(const sensor_msgs::JointState msg)
 {
     joint_state_msg = msg;
-    donatello = true;
+    jointState_flag = true;
 }
 
 /// \brief setPose function for set_pose service

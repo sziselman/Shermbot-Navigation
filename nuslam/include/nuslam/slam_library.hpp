@@ -50,16 +50,20 @@ namespace slam_library
             /// \param R - a 2x2 matrix representing sensor noise
             ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R);
 
+            /// \brief returns the state vector
+            /// \return stateVec
+            const colvec & getStateVec() const;
+
             /// \brief generates an estimate of the fulls tate vector z_hat
             /// \param tw - the twist command
             /// \return estimated state vector z_t = g(z_{t-1}, u_t, w_t)
-            void predict(const Twist2D & tw);
+            ExtendedKalman & predict(const Twist2D & tw);
 
             /// \brief updates the stateVector everytime a new landmark is encountered
             /// uses sensor measuremnets
             /// \param j - the landmark j
             /// \param z - 2x1 column vector containing range-bearing measurements
-            void update(int j, colvec z);
+            ExtendedKalman & update(int j, colvec z);
 
             /// \brief gets the matrix A_k using the state k-1
             /// \param tw - the twist command

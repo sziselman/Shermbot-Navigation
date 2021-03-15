@@ -9,6 +9,7 @@ Panels:
         - /Grid1
         - /LaserScan1
         - /TF1
+        - /TF1/Status1
         - /MarkerArray1
         - /RobotModel1
       Splitter Ratio: 0.6029411554336548
@@ -102,6 +103,8 @@ Visualization Manager:
           Value: true
         imu_link:
           Value: true
+        map:
+          Value: true
         turtle:
           Value: true
         wheel_left_link:
@@ -118,6 +121,8 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          map:
+            {}
           turtle:
             {}
       Update Interval: 0
@@ -207,7 +212,7 @@ Visualization Manager:
   Global Options:
     Background Color: 108; 108; 108
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:

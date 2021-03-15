@@ -69,6 +69,11 @@ namespace slam_library
         initCov();
     }
 
+    const colvec & ExtendedKalman::getStateVec() const
+    {
+        return stateVec;
+    }
+
     void ExtendedKalman::initCov()
     {
         cov = mat(len, len, fill::zeros);
@@ -79,26 +84,32 @@ namespace slam_library
         }
     }
 
-    void ExtendedKalman::predict(const Twist2D & tw)
+    ExtendedKalman & ExtendedKalman::predict(const Twist2D & tw)
     {
         // update the estimate using the model
 
         double th = stateVec(0);
         
-        colvec vec1(len, fill::zeros);
+        // colvec vec1(len, fill::zeros);
 
         if (tw.dth == 0)
         {
-            vec1(0) = 0;
-            vec1(1) = tw.dx * cos(th);
-            vec1(2) = tw.dx * sin(th);
+            // vec1(0) = 0;
+            stateVec(0) += 0.0;
+            // vec1(1) = tw.dx * cos(th);
+            stateVec(1) += tw.dx * cos(th);
+            // vec1(2) = tw.dx * sin(th);
+            stateVec(2) += tw.dx * sin(th);
         } else
         {
-            vec1(0) = tw.dth;
-            vec1(1) = -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
-            vec1(2) = (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
+            // vec1(0) = tw.dth;
+            stateVec(0) += 0.0;
+            // vec1(1) = -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
+            stateVec(1) += -(tw.dx/tw.dth)*sin(th) + (tw.dx/tw.dth)*sin(th+tw.dth);
+            // vec1(2) = (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
+            stateVec(2) += (tw.dx/tw.dth)*cos(th) - (tw.dx/tw.dth)*cos(th+tw.dth);
         }
-        stateVec += vec1;
+        // stateVec += vec1;
 
         // propagate Q_bar
         mat Q_bar(len, len, fill::zeros);
@@ -108,16 +119,18 @@ namespace slam_library
         // propagate uncertainty using the linearized state transition model
         mat covNew = getA(tw)*cov*getA(tw).t() + Q_bar;
         cov = covNew;
+        return *this;
     }
 
-    void ExtendedKalman::update(int j, colvec z)
+    ExtendedKalman & ExtendedKalman::update(int j, colvec z)
     {
         stateVec += KalmanGain(j) * (h(j) - z);
 
-        mat I(len, len, fill::eye);
-        mat covNew(len, len);
-        covNew = (I - KalmanGain(j)*getH(j))*cov;
-        cov = covNew;
+        // mat I(len, len, fill::eye);
+        // mat covNew(len, len);
+        // covNew = (I - KalmanGain(j)*getH(j))*cov;
+        // cov = covNew;
+        return *this;
     }
 
     mat ExtendedKalman::getA(const Twist2D & tw)
@@ -144,15 +157,15 @@ namespace slam_library
     {
         mat H(2, len, fill::zeros);
 
-        double dx = stateVec(3+2*j) - stateVec(1);
-        double dy = stateVec(4+2*j) - stateVec(2);
+        double dx = stateVec(1+2*j) - stateVec(1);
+        double dy = stateVec(2+2*j) - stateVec(2);
         double d = pow(dx, 2) + pow(dy, 2);
 
-        H(0, 1) = -1;
-        H(1, 0) = -dx / sqrt(d);
+        H(1, 0) = -1;
+        H(0, 1) = -dx / sqrt(d);
         H(1, 1) = dy / d;
-        H(2, 0) = -dy / sqrt(d);
-        H(2, 1) = -dx / d;
+        H(0, 2) = -dy / sqrt(d);
+        H(1, 2) = -dx / d;
         H(0, 3+2*(j-1)) = dx / sqrt(d);
         H(1, 3+2*(j-1)) = -dy / d;
         H(0, 4+2*(j-1)) = dy / sqrt(d);
@@ -163,8 +176,8 @@ namespace slam_library
     colvec ExtendedKalman::h(int j)
     {
         colvec h_j(2);
-        double m_xj = stateVec(3+2*j);
-        double m_yj = stateVec(4+2*j);
+        double m_xj = stateVec(1+2*j);
+        double m_yj = stateVec(2+2*j);
         double th = stateVec(0);
         double x = stateVec(1);
         double y = stateVec(2);
@@ -177,7 +190,8 @@ namespace slam_library
 
     mat ExtendedKalman::KalmanGain(int j)
     {
-        mat K_i = cov * getH(j).t() * (getH(j) * cov * getH(j).t() + sensorNoise).i();
+        mat K_i(len,2);
+        K_i = cov * getH(j).t() * (getH(j) * cov * getH(j).t() + sensorNoise).i();
         return K_i;
     }
 }
