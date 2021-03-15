@@ -116,9 +116,8 @@ int main(int argc, char* argv[])
     /*********
      * Define publishers, subscribers, services and clients
      ********/
-    // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
-    // ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Publisher slamPath_pub = n.advertise<nav_msgs::Path>("/slam_path", frequency);
+    ros::Publisher odomPath_pub = n.advertise<nav_msgs::Path>("/odom_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
     ros::Subscriber sensor_sub = n.subscribe("/fake_sensor", frequency, sensorCallback);
@@ -251,7 +250,10 @@ int main(int argc, char* argv[])
                     currentEstimate = raphael.getStateVec();
 
                     colvec stateUpdate(3+2*num);
-                    stateUpdate = currentEstimate + K_j * (rangeBearing - z_hat);
+                    colvec z_diff(2);
+                    z_diff = rangeBearing - z_hat;
+                    z_diff(1) = normalize_angle(z_diff(1));
+                    stateUpdate = currentEstimate + K_j * z_diff;
 
                     // compute the posterior covariance
                     mat currentCov(3+2*num, 3+2*num);
@@ -333,18 +335,18 @@ int main(int argc, char* argv[])
 
             broadcaster.sendTransform(odomBodyTrans);
 
-            // /**********
-            //  * Publish a nav_msgs/Path showing the trajectory of the robot according only to the wheel odometry
-            //  * *******/
-            // geometry_msgs::PoseStamped odom_poseStamp;
-            // odom_path.header.stamp = current_time;
-            // odom_path.header.frame_id = world_frame_id;
-            // odom_poseStamp.pose.position.x = ninjaTurtle.getX();
-            // odom_poseStamp.pose.position.y = ninjaTurtle.getY();
-            // odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
+            /**********
+             * Publish a nav_msgs/Path showing the trajectory of the robot according only to the wheel odometry
+             * *******/
+            geometry_msgs::PoseStamped odom_poseStamp;
+            odom_path.header.stamp = current_time;
+            odom_path.header.frame_id = world_frame_id;
+            odom_poseStamp.pose.position.x = ninjaTurtle.getX();
+            odom_poseStamp.pose.position.y = ninjaTurtle.getY();
+            odom_poseStamp.pose.orientation.z = ninjaTurtle.getTh();
 
-            // odom_path.poses.push_back(odom_poseStamp);
-            // path_pub.publish(odom_path);
+            odom_path.poses.push_back(odom_poseStamp);
+            odomPath_pub.publish(odom_path);
 
             /*********
              * Publish a nav_msgs/Path showing the trajectory of the robot according to the slam algorithm
@@ -357,7 +359,7 @@ int main(int argc, char* argv[])
             slam_poseStamp.pose.orientation.z = currentStateVec(0);
 
             slam_path.poses.push_back(slam_poseStamp);
-            path_pub.publish(slam_path);
+            slamPath_pub.publish(slam_path);
 
             jointState_flag = false;
         }

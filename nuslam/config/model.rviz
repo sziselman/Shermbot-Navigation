@@ -9,7 +9,10 @@ Panels:
         - /Grid1
         - /LaserScan1
         - /TF1
+        - /Path1
         - /MarkerArray1
+        - /Path2
+        - /Path3
       Splitter Ratio: 0.6029411554336548
     Tree Height: 1526
   - Class: rviz/Selection
@@ -103,6 +106,8 @@ Visualization Manager:
           Value: true
         map:
           Value: true
+        odom:
+          Value: true
         turtle:
           Value: true
         wheel_left_link:
@@ -120,7 +125,19 @@ Visualization Manager:
       Tree:
         world:
           map:
-            {}
+            odom:
+              base_footprint:
+                base_link:
+                  base_scan:
+                    {}
+                  caster_back_link:
+                    {}
+                  imu_link:
+                    {}
+                  wheel_left_link:
+                    {}
+                  wheel_right_link:
+                    {}
           turtle:
             {}
       Update Interval: 0
@@ -128,7 +145,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 25; 255; 0
+      Color: 253; 150; 253
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -156,6 +173,103 @@ Visualization Manager:
       Namespaces:
         real: true
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_scan:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        wheel_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 92; 53; 102
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /slam_path
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 237; 212; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /odom_path
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
