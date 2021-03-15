@@ -12,11 +12,6 @@ namespace slam_library
     using namespace arma;
     using namespace rigid2d;
 
-    /// \brief a function that generates multivariate gaussian noise
-    /// \param mean nx1 column vector
-    /// \param var nxn matrix
-    colvec MultiGauss(const colvec mean, const mat var);
-
     /// \brief a function that calculates the range-bearing measurement
     /// \param xRel the x distance of the marker relative to the robot
     /// \param yRel the y distance of the marker relative to the robot
@@ -54,26 +49,34 @@ namespace slam_library
             /// \return stateVec
             const colvec & getStateVec() const;
 
-            /// \brief generates an estimate of the fulls tate vector z_hat
-            /// \param tw - the twist command
-            /// \return estimated state vector z_t = g(z_{t-1}, u_t, w_t)
-            ExtendedKalman & predict(const Twist2D & tw);
+            /// \brief updates the state vector of the EKF object
+            /// \param newState - the new state vector
+            ExtendedKalman & updateStateVec(colvec newState);
 
-            /// \brief updates the stateVector everytime a new landmark is encountered
-            /// uses sensor measuremnets
-            /// \param j - the landmark j
-            /// \param z - 2x1 column vector containing range-bearing measurements
-            ExtendedKalman & update(int j, colvec z);
+            /// \brief returns the covariance matrix
+            /// \return cov
+            const mat & getCov() const;
 
-            /// \brief gets the matrix A_k using the state k-1
-            /// \param tw - the twist command
-            /// \return a (3+2n)x(3+2n) matrix
-            mat getA(double th_prev, const Twist2D & tw);
+            /// \brief updates the covariance matrix of the EKF object
+            /// \param covNew - the new covariance matrix
+            ExtendedKalman & updateCov(mat covNew);
 
-            /// \brief gets the matrix H_j
-            /// \param j - the landmark j
-            /// \return 2x(3+2n) matrix, the derivative of h_j wrt the state
-            mat getH(int j);
+            /// \brief g function that updates the estimate using the model
+            /// \param prevState - a (3+2n)x1 column vector representing the state of the robot
+            /// \param tw - the twist / controls
+            /// \return - a (3+2n)x1 column vector representing the change of state of the robot
+            colvec g(colvec prevState, const Twist2D & tw);
+
+            /// \brief function that populates Q_bar
+            /// \param Q - a 3x3 matrix
+            /// \return - a (3+2n)x(3+2n) matrix Q_bar
+            mat Q_bar();
+
+            /// \brief a function that calculates A matrix
+            /// \param prevState - a (3+2n)x1 column vector representing the state of the robot
+            /// \param tw - the twist / controls
+            /// \return - a (3+2n)x(3+2n) matrix representing g'
+            mat getA(colvec prevState, const Twist2D & tw);
 
             /// \brief gets the measurement for range and bearing to landmark j
             /// \param j - the landmark j
@@ -85,7 +88,10 @@ namespace slam_library
             /// \return (3+2n)x2 matrix, Kalman gain 
             mat KalmanGain(int j);
 
-            colvec getSens();
+            /// \brief gets the matrix H_j
+            /// \param j - the landmark j
+            /// \return 2x(3+2n) matrix, the derivative of h_j wrt the state
+            mat getH(int j);
     };
 }
 

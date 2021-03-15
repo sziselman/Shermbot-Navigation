@@ -203,24 +203,71 @@ int main(int argc, char* argv[])
 
                 teenageMutant(joint_state_msg.position[0], joint_state_msg.position[1]);
 
-                // predict: update the estimate using the model
-                raphael.predict(slam_twist);
+                /***********
+                 *  predict: update the estimate using the model
+                 * ********/
+                // update the estimate using the model
+                colvec prevState(3+2*num);
+                prevState = raphael.getStateVec();
 
+                colvec newState(3+2*num);
+                newState = raphael.g(prevState, slam_twist);
+
+                // propagate the uncertainty using the linearized state transition model
+                mat Q_bar(3+2*num, 3+2*num);
+                Q_bar = raphael.Q_bar();
+
+                mat A(3+2*num, 3+2*num);
+                A = raphael.getA(prevState, slam_twist);
+
+                mat cov(3+2*num, 3+2*num);
+                cov = raphael.getCov();
+
+                mat covNew(3+2*num, 3+2*num);
+                covNew = A * cov * A.t() + Q_bar;
+
+                raphael.updateStateVec(newState);
+                raphael.updateCov(covNew);
+                
                 // for loop that goes through each marker that was measured
                 for (auto marker: marker_array.markers)
                 {
                     int j = marker.id + 1;
 
                     // put the marker (x,y) location in range-bearing form
-                    colvec rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y);
+                    colvec rangeBearing(2);
+                    rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y);
 
                     // compute theoretical measurements, given the current state estimate
+                    colvec z_hat(2);
+                    z_hat = raphael.h(j);
 
-                    raphael.update(j, rangeBearing);
+                    // compute the Kalman gain from the linearized measurement model
+                    mat K_j(3+2*num, 2);
+                    K_j = raphael.KalmanGain(j);
 
-                //     colvec currentState(3+2*num);
+                    // compute the posterior state update
+                    colvec currentEstimate(3+2*num);
+                    currentEstimate = raphael.getStateVec();
 
-                //     currentState = raphael.getStateVec();
+                    colvec stateUpdate(3+2*num);
+                    stateUpdate = currentEstimate + K_j * (rangeBearing - z_hat);
+
+                    // compute the posterior covariance
+                    mat currentCov(3+2*num, 3+2*num);
+                    currentCov = raphael.getCov();
+
+                    mat Identity(3+2*num, 3+2*num, fill::eye);
+
+                    mat H_j(2, 3+2*num);
+                    H_j = raphael.getH(j);
+
+                    mat newCov(3+2*num, 3+2*num);
+                    newCov = (Identity - K_j * H_j) * currentCov;
+
+                    // update the state and covariance
+                    raphael.updateStateVec(stateUpdate);
+                    raphael.updateCov(newCov);
                 }
                 
                 markerArray_flag = false;
@@ -251,9 +298,6 @@ int main(int argc, char* argv[])
             tf2::Quaternion mapOdomQuater;
             
             colvec currentStateVec = raphael.getStateVec();
-            ROS_INFO_STREAM(currentStateVec(0));
-            ROS_INFO_STREAM(currentStateVec(1));
-            ROS_INFO_STREAM(currentStateVec(2));
 
             mapOdomQuater.setRPY(0.0, 0.0, currentStateVec(0) - ninjaTurtle.getTh());
             geometry_msgs::Quaternion mapOdomQuat = tf2::toMsg(mapOdomQuater);
@@ -270,24 +314,24 @@ int main(int argc, char* argv[])
 
             broadcaster.sendTransform(mapOdomTrans);
 
-            // /**********
-            //  * Publish a transform from odom to body
-            //  * *******/
-            // tf2::Quaternion odomBodyQuater;
-            // odomBodyQuater.setRPY(0.0, 0.0, ninjaTurtle.getTh());
-            // geometry_msgs::Quaternion odomBodyQuat = tf2::toMsg(odomBodyQuater);
+            /**********
+             * Publish a transform from odom to body
+             * *******/
+            tf2::Quaternion odomBodyQuater;
+            odomBodyQuater.setRPY(0.0, 0.0, ninjaTurtle.getTh());
+            geometry_msgs::Quaternion odomBodyQuat = tf2::toMsg(odomBodyQuater);
 
-            // geometry_msgs::TransformStamped odomBodyTrans;
-            // odomBodyTrans.header.stamp = current_time;
-            // odomBodyTrans.header.frame_id = odom_frame_id;
-            // odomBodyTrans.child_frame_id = body_frame_id;
+            geometry_msgs::TransformStamped odomBodyTrans;
+            odomBodyTrans.header.stamp = current_time;
+            odomBodyTrans.header.frame_id = odom_frame_id;
+            odomBodyTrans.child_frame_id = body_frame_id;
 
-            // odomBodyTrans.transform.translation.x = ninjaTurtle.getX();
-            // odomBodyTrans.transform.translation.y = ninjaTurtle.getY();
-            // odomBodyTrans.transform.translation.z = 0.0;
-            // odomBodyTrans.transform.rotation = odomBodyQuat;
+            odomBodyTrans.transform.translation.x = ninjaTurtle.getX();
+            odomBodyTrans.transform.translation.y = ninjaTurtle.getY();
+            odomBodyTrans.transform.translation.z = 0.0;
+            odomBodyTrans.transform.rotation = odomBodyQuat;
 
-            // broadcaster.sendTransform(odomBodyTrans);
+            broadcaster.sendTransform(odomBodyTrans);
 
             // /**********
             //  * Publish a nav_msgs/Path showing the trajectory of the robot according only to the wheel odometry
@@ -302,18 +346,18 @@ int main(int argc, char* argv[])
             // odom_path.poses.push_back(odom_poseStamp);
             // path_pub.publish(odom_path);
 
-            // /*********
-            //  * Publish a nav_msgs/Path showing the trajectory of the robot according to the slam algorithm
-            //  * ******/
-            // geometry_msgs::PoseStamped slam_poseStamp;
-            // slam_path.header.stamp = current_time;
-            // slam_path.header.frame_id = world_frame_id;
-            // slam_poseStamp.pose.position.x = currentStateVec(1);
-            // slam_poseStamp.pose.position.y = currentStateVec(2);
-            // slam_poseStamp.pose.orientation.z = currentStateVec(0);
+            /*********
+             * Publish a nav_msgs/Path showing the trajectory of the robot according to the slam algorithm
+             * ******/
+            geometry_msgs::PoseStamped slam_poseStamp;
+            slam_path.header.stamp = current_time;
+            slam_path.header.frame_id = world_frame_id;
+            slam_poseStamp.pose.position.x = currentStateVec(1);
+            slam_poseStamp.pose.position.y = currentStateVec(2);
+            slam_poseStamp.pose.orientation.z = currentStateVec(0);
 
-            // slam_path.poses.push_back(slam_poseStamp);
-            // path_pub.publish(slam_path);
+            slam_path.poses.push_back(slam_poseStamp);
+            path_pub.publish(slam_path);
 
             jointState_flag = false;
         }

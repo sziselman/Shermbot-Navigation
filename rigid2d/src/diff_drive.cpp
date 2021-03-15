@@ -89,23 +89,24 @@ namespace rigid2d
         twistb.dx = (wheelRad / 2) * (dUL + dUR);
         twistb.dy = 0.0;
 
-        // Integrate twist to get Tbb'
-        Transform2D Tbb = integrateTwist(twistb);
+        // // Integrate twist to get Tbb'
+        // Transform2D Tbb = integrateTwist(twistb);
 
-        // get displacement in the body frame 
-        Twist2D dqb;
+        // // get displacement in the body frame 
+        // Twist2D dqb;
 
-        dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
-        dqb.dx = Tbb.getX();
-        dqb.dy = Tbb.getY();
+        // dqb.dth = atan(Tbb.getSinTh() / Tbb.getCosTh());
+        // dqb.dx = Tbb.getX();
+        // dqb.dy = Tbb.getY();
 
-        // get adjoint A(theta, 0, 0)
-        Transform2D adj = Transform2D(th);
+        // // get adjoint A(theta, 0, 0)
+        // Transform2D adj = Transform2D(th);
 
-        // Convert twist to desired displacement
-        Twist2D dq = adj(dqb);
+        // // Convert twist to desired displacement
+        // Twist2D dq = adj(dqb);
 
-        return dq;
+        // return dq;
+        return twistb;
     }
     DiffDrive & DiffDrive::operator()(double thLnew, double thRnew)
     {

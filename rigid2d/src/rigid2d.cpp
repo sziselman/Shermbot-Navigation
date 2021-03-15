@@ -308,9 +308,8 @@ namespace rigid2d
 
     Transform2D integrateTwist(Twist2D & tw)
     {
-        Transform2D T_bs, T_ss, intTwist;
-        Vector2D vecS;                              // vector with x_s and y_s to input for T_bs
-        Vector2D vec;
+        Vector2D vec, vecS;     // vector with x_s and y_s to input for T_bs
+        Transform2D intTwist;
 
         if (tw.dth == 0)
         {
@@ -325,20 +324,20 @@ namespace rigid2d
             ***********************************/
             vecS.x = tw.dy / tw.dth;
             vecS.y = - (tw.dx / tw.dth);
-            T_bs = Transform2D(vecS);
+            Transform2D T_sb = Transform2D(vecS);
 
             /***********************************
             * Want to find T_ss'
             ***********************************/
-            T_ss = Transform2D(-tw.dth);
+            Transform2D T_ss = Transform2D(tw.dth);
 
             /***********************************
             * We know that T_bs = T_s'b'
             * Solve for T_bb' (intTwist)
             ***********************************/
-            intTwist = T_bs;
-            intTwist *= T_ss;
-            intTwist *= T_bs.inv();
+            Transform2D T_bs = T_sb.inv();
+
+            intTwist = T_bs * T_ss * T_sb;
         }
         return intTwist;
     }
