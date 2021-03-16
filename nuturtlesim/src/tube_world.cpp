@@ -369,8 +369,10 @@ int main(int argc, char* argv[])
                     double dx = (loc[0] - ninjaTurtle.getX())/20;
                     double dy = (loc[1] - ninjaTurtle.getY())/20;
                     
-                    // have the robot move along that tangent line
+                    // // have the robot move along that tangent line
                     ninjaTurtle.changeConfig(dy, dx);
+
+                    ROS_INFO_STREAM("approaching tube!!!!");
                 }
             }
 

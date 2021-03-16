@@ -1,6 +1,6 @@
 # YAML file that provides parameters for tube_world simulation
 tube_radius: 0.0762
-robot_radius: 0.95
+robot_radius: 0.095
 tube1_location: [0.5, 0.5]
 tube2_location: [-0.5, -0.5]
 tube3_location: [1.0, 1.0]
