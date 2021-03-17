@@ -1,15 +1,16 @@
 /// \file slam.cpp
-/// \brief contains a node called odometry that will publish odometry messages in a standard ROS way
+/// \brief contains a node called slam that will implement EKF SLAM
 ///
 /// PARAMETERS:
-///     wheel_base (double) : The distance between wheels
-///     wheel_radius (double)   : The radius of both wheels
-///     odom_frame_id   : The name of the odometry tf frame
-///     body_frame_id   : The name of the body tf frame
-///     left_wheel_joint    : The name of the left wheel joint
-///     right_wheel_joint   : The name of the right wheel joint
-/// PUBLISHES: odom (nav_msgs/Odometry)
-/// SUBSCRIBES: joint_states (sensor_msgs/JointState)
+///     tube_radius: the radius of the tube / landmarks
+///     robot_radius: the radius of the turtlebot
+///     R : 2x2 sensor noise matrix
+///     Q : 3x3 process noise matrix
+///     tube_locations : the (x,y) locations of each tube / landmark
+/// PUBLISHES:  /slam_path (nav_msgs::Path)
+///             /odom_path (nav_msgs::Path)
+/// SUBSCRIBES: /joint_states (sensor_msgs::JointState)
+///             /fake_sensor (visualization_msgs::MarkerArray)
 /// SERVICES: set_pose : Sets the pose of the turtlebot's configuration
 
 #include <ros/ros.h>

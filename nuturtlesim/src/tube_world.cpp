@@ -16,17 +16,22 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Quaternion.h>
+
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/LaserScan.h>
+
 #include <rigid2d/rigid2d.hpp>
 #include <rigid2d/diff_drive.hpp>
+
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 
@@ -130,6 +135,7 @@ int main(int argc, char* argv[])
     ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency);
     // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
+    ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", frequency);
 
     ros::Subscriber twist_sub = n.subscribe("/cmd_vel", frequency, twistCallback);
 
