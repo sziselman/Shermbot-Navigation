@@ -1,0 +1,11 @@
+<launch>
+    <arg name="simulate" default="true" doc="if true (launches simulator on rvi) if false (launches landmark detection on turtlebot)"/>
+
+    <group if="$(arg simulate)">
+        <node pkg="nuslam" name="landmarks" type="landmarks" output="screen"/>
+        <node pkg="rviz" name="rviz" args="-d $(find nuslam)/config/model.rviz -f world" type="rviz"/>
+    </group>
+
+    <group unless="$(arg simulate)">
+    </group>
+</launch>
