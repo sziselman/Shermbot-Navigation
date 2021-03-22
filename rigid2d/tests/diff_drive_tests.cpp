@@ -21,22 +21,22 @@ TEST_CASE("Update robot configuration", "[update configuration]") // Sarah, Zise
     REQUIRE(robot.getY() == Approx(0));
 }
 
-TEST_CASE("Update robot configuration 2", "[update configuration 2]") // Sarah, Ziselman
-{
-    using namespace rigid2d;
-    double wheelbase = 2;
-    double wheelradius = 1;
+// TEST_CASE("Update robot configuration 2", "[update configuration 2]") // Sarah, Ziselman
+// {
+//     using namespace rigid2d;
+//     double wheelbase = 2;
+//     double wheelradius = 1;
 
-    DiffDrive robot = DiffDrive(wheelbase, wheelradius, 0.0, 0.0, 0.0, 0.0, 0.0);
+//     DiffDrive robot = DiffDrive(wheelbase, wheelradius, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    double leftWheelNew = PI;
-    double rightWheelNew = PI/2;
-    robot(leftWheelNew, rightWheelNew);
+//     double leftWheelNew = PI;
+//     double rightWheelNew = PI/2;
+//     robot(leftWheelNew, rightWheelNew);
 
-    REQUIRE(robot.getTh() == Approx(-PI/4));
-    REQUIRE(robot.getX() == Approx(3/sqrt(2)));
-    REQUIRE(robot.getY() == Approx((3 + 3*sqrt(2))/sqrt(2)));
-}
+//     REQUIRE(robot.getTh() == Approx(-PI/4));
+//     REQUIRE(robot.getX() == Approx(3/sqrt(2)));
+//     REQUIRE(robot.getY() == Approx((3 + 3*sqrt(2))/sqrt(2)));
+// }
 
 TEST_CASE("Get wheel velocities", "[wheel velocities]") // Sarah, Ziselman
 {
@@ -57,26 +57,26 @@ TEST_CASE("Get wheel velocities", "[wheel velocities]") // Sarah, Ziselman
     REQUIRE(velocities.uR == Approx(PI/2));
 }
 
-TEST_CASE("Get wheel velocities 2", "[wheel velocities 2]") // Sarah, Ziselman
-{
-    using namespace rigid2d;
-    double wheelbase = 2;
-    double wheelradius = 1;
+// TEST_CASE("Get wheel velocities 2", "[wheel velocities 2]") // Sarah, Ziselman
+// {
+//     using namespace rigid2d;
+//     double wheelbase = 2;
+//     double wheelradius = 1;
 
-    DiffDrive robot = DiffDrive(wheelbase, wheelradius, 0.0, 0.0, 0.0, 0.0, 0.0);
+//     DiffDrive robot = DiffDrive(wheelbase, wheelradius, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    Twist2D twist;
-    twist.dth = 0.0;
-    twist.dx = 2.0;
-    twist.dy = 3.0;
+//     Twist2D twist;
+//     twist.dth = 0.0;
+//     twist.dx = 2.0;
+//     twist.dy = 3.0;
 
-    wheelVel velocities = robot.convertTwist(twist);
+//     wheelVel velocities = robot.convertTwist(twist);
 
-    REQUIRE(velocities.uL == Approx(2.0));
-    REQUIRE(velocities.uR == Approx(2.0));
-}
+//     REQUIRE(velocities.uL == Approx(2.0));
+//     REQUIRE(velocities.uR == Approx(2.0));
+// }
 
-TEST_CASE("Get wheel velocities 2", "[wheel velocities 2]") // Sarah, Ziselman
+TEST_CASE("Get wheel velocities 3", "[wheel velocities 3]") // Sarah, Ziselman
 {
     using namespace rigid2d;
     double wheelbase = 2;
