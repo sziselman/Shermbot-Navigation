@@ -168,8 +168,9 @@ add_dependencies(slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 #   ${catkin_LIBRARIES}
 # )
 # target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
-target_link_libraries(slam ${catkin_LIBRARIES} ${PROJECT_NAME})
-target_link_libraries(slam ${ARMADILLO_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES})
+target_link_libraries(slam ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PROJECT_NAME})
+# target_link_libraries(slam rigid2d)
 
 #############
 ## Install ##
@@ -231,6 +232,6 @@ install(DIRECTORY launch/ DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   catch_add_test(circle_test tests/circle_tests.cpp)
-  target_link_libraries(circle_test ${catkin_LIBRARIES} ${PROJECT_NAME})
+  target_link_libraries(circle_test ${catkin_LIBRARIES} ${PROJECT_NAME} ${ARMADILLO_LIBRARIES})
   add_rostest(tests/circle_tests.cpp)
 endif()
