@@ -126,6 +126,7 @@ int main(int argc, char* argv[])
     ros::ServiceServer setPose_service = n.advertiseService("set_pose", setPose);
     ros::ServiceClient setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
 
+    ros::Rate loop_rate(frequency);
     /*********
      * Set initial parameters of the differential drive robot to 0
      * ******/
@@ -364,7 +365,10 @@ int main(int argc, char* argv[])
 
             jointState_flag = false;
         }
+
+        loop_rate.sleep();
     }
+    return 0;
 }
 
 /// \brief callback function for subscriber to the sensor message

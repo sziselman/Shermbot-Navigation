@@ -151,6 +151,7 @@ add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(slam src/slam.cpp)
+add_executable(landmarks src/landmarks.cpp)
 # add_executable(foo foo.cc)
 
 ## Rename C++ executable without prefix
@@ -162,6 +163,7 @@ add_executable(slam src/slam.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(landmarks ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -170,6 +172,8 @@ add_dependencies(slam ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 # target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES})
 target_link_libraries(slam ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PROJECT_NAME})
+target_link_libraries(landmarks ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PROJECT_NAME})
+
 # target_link_libraries(slam rigid2d)
 
 #############
@@ -188,7 +192,7 @@ target_link_libraries(slam ${catkin_LIBRARIES} ${ARMADILLO_LIBRARIES} ${PROJECT_
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS slam
+install(TARGETS landmarks slam
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -4,32 +4,18 @@
 /// \brief Library for circle fit algorithm
 
 #include <armadillo>
+#include <vector>
+#include <visualization_msgs/Marker.h>
+#include <geometry_msgs/Point.h>
 
 namespace circle_fit
 {
     using namespace arma;
-
-    /// a class that contains functions for implementing circle fitting algorithm
-    class CircleFit
-    {
-        private:
-            double xCenter;
-            double yCenter;
-            double radius;
-        public:
-            /// \brief a function used to initialize circle fit object
-            /// \param data - a nx2 matrix containing (x,y) location of the data points
-            CircleFit(mat data);
-
-            /// \brief accesses the x coordinate of the center of the circle
-            const double & getX() const;
-
-            /// \brief accesses the y coordinate of the center of the circle
-            const double & getY() const;
-
-            /// \brief accesses the radius of the circle
-            const double & getR() const;
-    };
+    
+    /// \brief function that takes a vector of clustered points and returns a cylinder marker
+    /// \param data - vector of clustered points
+    /// \return a cylindrical marker
+    visualization_msgs::Marker CircleFit(std::vector<geometry_msgs::Point> data);
 }
 
 #endif

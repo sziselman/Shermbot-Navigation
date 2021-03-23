@@ -2,41 +2,47 @@
 /// \brief a library that implements circle fit algorithm
 
 #include "nuslam/circle_fit_library.hpp"
-#include <armadillo>
+#include <cmath>
 
 namespace circle_fit
 {
     using namespace arma;
 
-
-    CircleFit::CircleFit(mat data)
+    visualization_msgs::Marker CircleFit(std::vector<geometry_msgs::Point> data)
     {
-        int n = data.n_cols;
+        // compute the (x,y) coordinates of the centroid
 
-        double x_hat = sum(data.col(0)) / n;
-        double y_hat = sum(data.col(1)) / n;
+        double x_hat = 0, y_hat = 0;
+        int n = data.size();
 
-        // create the data matrix
-        mat Z(4, n, fill::ones);
-        
-        for (int i; i < n; ++i)
+        for (auto point : data)
         {
-            // shift coordinates so that the centroid is at the origin
-            Z(i, 1) = data(i, 0) - x_hat;
-            Z(i, 2) = data(i, 1) - y_hat;
-            // compute z_i = x_i^2 + y_i^2
-            Z(i, 0) = pow(Z(i, 1), 2) + pow(Z(i, 2), 2);
+            x_hat += point.x / n;
+            y_hat += point.y / n;
+        }
+        
+        // shift centroid so that the center is at the origin
+        for (int i = 0; i < n; ++i)
+        {
+            data[i].x -= x_hat;
+            data[i].y -= y_hat;
+        }
+
+        // form the data matrix from the n data points
+        mat Z(n, 4, fill::ones);
+        for (int j = 0; j < n; ++j)
+        {
+            Z(j, 0) = pow(data[j].x, 2) + pow(data[j].y, 2);
+            Z(j, 1) = data[j].x;
+            Z(j, 2) = data[j].y;
         }
 
         // compute the mean of z
-        double zMean = sum(Z.col(0)) / n;
-
-        // form the moment matrix
-        mat M = (Z.t() * Z) / n;
+        double z_bar = sum(Z.col(0)) / n;
 
         // form the constraint matrix for the "Hyperaccute algebraic fit"
         mat H(4, 4, fill::eye);
-        H(0, 0) = 8 * zMean;
+        H(0, 0) = 2 * z_bar;
         H(0, 3) = 2;
         H(3, 0) = 2;
         H(3, 3) = 0;
@@ -46,7 +52,7 @@ namespace circle_fit
         Hinv(0, 0) = 0;
         Hinv(0, 3) = 0.5;
         Hinv(3, 0) = 0.5;
-        Hinv(3, 3) = -2 * zMean;
+        Hinv(3, 3) = -2 * z_bar;
 
         // compute the Singular Value Decomposition of Z
         mat U;
@@ -54,59 +60,57 @@ namespace circle_fit
         mat V;
         svd(U, s, V, Z);
 
-        // determine A based on the smallest singular value sigma4
+        // solve for A based on sigma_4
         vec A;
-        if (s(3) < pow(10, -12))
+
+        if (s(3) < 1e-12)
         {
             A = V.col(3);
         } else
         {
-            mat Y = V * s * V.t();
-            // Find the eigenvalues and vectors of Q
+            mat Y = V * diagmat(s) * V.t();
             mat Q = Y * Hinv * Y;
-
             vec eigval;
             mat eigvec;
             eig_sym(eigval, eigvec, Q);
 
-            // find the eigenvector A* corresponding to the smallest positive eigenvalue of Q
-            double eigMax = 1000000;
-            int eigInd = 0;
-            for (int j = 0; j < int(eigval.n_elem); ++j)
+            // find the eigenvector corresponding to the smallest positive eigenvalue of Q
+            int eig_index = 0;
+            double eig_max = INT_MAX;
+
+            for (int i = 0; i < eigval.size(); ++i)
             {
-                if ((eigval(j) > 0) && (eigval(j) < eigMax))
+                if (eigval(i) > 0 && eigval(i) < eig_max)
                 {
-                    eigMax = eigval(j);
-                    eigInd = j;
+                    eig_index = i;
+                    eig_max = eigval(i);
                 }
             }
-            vec A_star = eigvec.col(eigInd);
-            A = Y.i() * A_star;
+            vec Astar = eigvec.col(eig_index);
+            A = solve(Y, Astar);
         }
 
-        // find the constants for the equation of the circle
+        // solve for a, b, and R^2 (equation of the circle)
         double a = -A(1) / (2*A(0));
         double b = -A(2) / (2*A(0));
-        double R2 = (pow(A(1), 2) + pow(A(2), 2) - 4 * A(0) * A(3)) / (4 * pow(A(0), 2));
+        double R2 = (pow(A(1),2) + pow(A(2), 2) - 4*A(0)*A(3)) / (4*pow(A(0),2));
 
-        // find center coordinates
-        xCenter = a + x_hat;
-        yCenter = b + y_hat;
-        radius = sqrt(R2);
+        // create the marker to return
+        visualization_msgs::Marker marker;
+        marker.ns = "real";
+        marker.id = 1;
+        marker.type = visualization_msgs::Marker::CYLINDER;
+        marker.pose.position.x = a + x_hat;
+        marker.pose.position.y = b + y_hat;
+        marker.scale.x = sqrt(R2);
+        marker.scale.y = sqrt(R2);
+        marker.color.a = 1.0;
+        marker.color.r = 1.0;
+        marker.color.g = 1.0;
+        marker.color.b = 1.0;
+        marker.frame_locked = true;
+
+        return marker;
     }
 
-    const double & CircleFit::getX() const
-    {
-        return xCenter;
-    }
-
-    const double & CircleFit::getY() const
-    {
-        return yCenter;
-    }
-
-    const double & CircleFit::getR() const
-    {
-        return radius;
-    }
 }
