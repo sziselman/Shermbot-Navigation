@@ -18,6 +18,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Point.h>
 
 #include <sensor_msgs/JointState.h>
 #include <sensor_msgs/LaserScan.h>
@@ -85,6 +86,11 @@ int main(int argc, char* argv[])
     int frequency = 10;
     double tubeRad, wheelRad, wheelBase, maxRange, twistNoise, slipMin, slipMax, robotRad;
     bool latch = true;
+
+    double maxRangeScan, minRangeScan, scanRes, scanNoise;
+    int angleIncr, sampleNum;
+
+    double wallWidth, wallHeight;
     
     std::string world_frame_id, turtle_frame_id, left_wheel_joint, right_wheel_joint;
     std::string odom_frame_id;
@@ -114,6 +120,15 @@ int main(int argc, char* argv[])
     n.getParam("slip_min", slipMin);
     n.getParam("slip_max", slipMax);
     n.getParam("robot_radius", robotRad);
+
+    n.getParam("maximum_range", maxRangeScan);
+    n.getParam("minimum_range", minRangeScan);
+    n.getParam("angle_increment", angleIncr);
+    n.getParam("sample_num", sampleNum);
+    n.getParam("resolution", scanRes);
+    n.getParam("noise_level", scanNoise);
+    n.getParam("wall_width", wallWidth);
+    n.getParam("wall_height", wallHeight);
 
     /***********
      * Initialize mroe local variables
@@ -188,8 +203,8 @@ int main(int argc, char* argv[])
         marker1.pose.position.y = tube1_loc[1];
         marker1.pose.position.z = 0.1;
         marker1.pose.orientation = markerQuat;
-        marker1.scale.x = tubeRad;
-        marker1.scale.y = tubeRad;
+        marker1.scale.x = tubeRad*2;
+        marker1.scale.y = tubeRad*2;
         marker1.scale.z = 0.2;
         marker1.color.a = 1.0;
         marker1.color.r = 1.0;
@@ -211,8 +226,8 @@ int main(int argc, char* argv[])
         marker2.pose.position.y = tube2_loc[1];
         marker2.pose.position.z = 0.1;
         marker2.pose.orientation = markerQuat;
-        marker2.scale.x = tubeRad;
-        marker2.scale.y = tubeRad;
+        marker2.scale.x = tubeRad*2;
+        marker2.scale.y = tubeRad*2;
         marker2.scale.z = 0.2;
         marker2.color.a = 1.0;
         marker2.color.r = 1.0;
@@ -234,8 +249,8 @@ int main(int argc, char* argv[])
         marker3.pose.position.y = tube3_loc[1];
         marker3.pose.position.z = 0.1;
         marker3.pose.orientation = markerQuat;
-        marker3.scale.x = tubeRad;
-        marker3.scale.y = tubeRad;
+        marker3.scale.x = tubeRad*2;
+        marker3.scale.y = tubeRad*2;
         marker3.scale.z = 0.2;
         marker3.color.a = 1.0;
         marker3.color.r = 1.0;
@@ -257,8 +272,8 @@ int main(int argc, char* argv[])
         marker4.pose.position.y = tube4_loc[1];
         marker4.pose.position.z = 0.1;
         marker4.pose.orientation = markerQuat;
-        marker4.scale.x = tubeRad;
-        marker4.scale.y = tubeRad;
+        marker4.scale.x = tubeRad*2;
+        marker4.scale.y = tubeRad*2;
         marker4.scale.z = 0.2;
         marker4.color.a = 1.0;
         marker4.color.r = 1.0;
@@ -280,8 +295,8 @@ int main(int argc, char* argv[])
         marker5.pose.position.y = tube5_loc[1];
         marker5.pose.position.z = 0.1;
         marker5.pose.orientation = markerQuat;
-        marker5.scale.x = tubeRad;
-        marker5.scale.y = tubeRad;
+        marker5.scale.x = tubeRad*2;
+        marker5.scale.y = tubeRad*2;
         marker5.scale.z = 0.2;
         marker5.color.a = 1.0;
         marker5.color.r = 1.0;
@@ -303,8 +318,8 @@ int main(int argc, char* argv[])
         marker6.pose.position.y = tube6_loc[1];
         marker6.pose.position.z = 0.1;
         marker6.pose.orientation = markerQuat;
-        marker6.scale.x = tubeRad;
-        marker6.scale.y = tubeRad;
+        marker6.scale.x = tubeRad*2;
+        marker6.scale.y = tubeRad*2;
         marker6.scale.z = 0.2;
         marker6.color.a = 1.0;
         marker6.color.r = 1.0;
@@ -314,9 +329,39 @@ int main(int argc, char* argv[])
 
         markerArray.markers.push_back(marker6);
 
+        visualization_msgs::Marker wall;
+        geometry_msgs::Point upLeft, upRight, loLeft, loRight;
+
+        upLeft.x = -wallWidth/2;
+        upLeft.y = wallHeight/2;
+
+        upRight.x = wallWidth/2;
+        upRight.y = wallHeight/2;
+
+        loLeft.x = -wallWidth/2;
+        loLeft.y = -wallHeight/2;
+
+        loRight.x = wallWidth/2;
+        loRight.y = -wallHeight/2;
+
+        wall.header.frame_id = world_frame_id;
+        wall.header.stamp = current_time;
+        wall.ns = "real";
+        wall.type = 4;
+        wall.action = visualization_msgs::Marker::ADD;
+        wall.points.push_back(upLeft);
+        wall.points.push_back(upRight);
+        wall.points.push_back(loRight);
+        wall.points.push_back(loLeft);
+        wall.scale.x = 0.01;
+        wall.color.a = 0.0;
+        wall.color.r = 250 / 255;
+        wall.color.g = 218 / 255;
+        wall.color.b = 221 / 255;
+
+        // markerArray.markers.push_back(wall);
+
         marker_true_pub.publish(markerArray);
-
-
 
         // if twist message has been received
         if (twist_received)
@@ -377,8 +422,6 @@ int main(int argc, char* argv[])
                     
                     // // have the robot move along that tangent line
                     ninjaTurtle.changeConfig(dy, dx);
-
-                    ROS_INFO_STREAM("approaching tube!!!!");
                 }
             }
 
@@ -401,22 +444,6 @@ int main(int argc, char* argv[])
             odom_trans.transform.rotation = odom_quat;
         
             broadcaster.sendTransform(odom_trans);
-
-            // nav_msgs::Odometry odom;
-            // odom.header.stamp = current_time;
-            // odom.header.frame_id = "odom";
-
-            // odom.pose.pose.position.x = ninjaTurtle.getX();
-            // odom.pose.pose.position.y = ninjaTurtle.getY();
-            // odom.pose.pose.position.z = 0.0;
-            // odom.pose.pose.orientation = odom_quat;
-
-            // odom.child_frame_id = turtle_frame_id;
-            // odom.twist.twist.linear.x = desiredTwist.dx;
-            // odom.twist.twist.linear.y = desiredTwist.dy;
-            // odom.twist.twist.angular.z = desiredTwist.dth;
-
-            // odom_pub.publish(odom);
 
             /***********
              * FAKE_SENSOR markers
@@ -453,8 +480,8 @@ int main(int argc, char* argv[])
             markerRel1.pose.position.y = tube1_t.y;
             markerRel1.pose.position.z = 0.1;
             markerRel1.pose.orientation = markerQuat;
-            markerRel1.scale.x = tubeRad;
-            markerRel1.scale.y = tubeRad;
+            markerRel1.scale.x = tubeRad*2;
+            markerRel1.scale.y = tubeRad*2;
             markerRel1.scale.z = 0.2;
             markerRel1.color.a = 1.0;
             markerRel1.color.r = 1.0;
@@ -487,8 +514,8 @@ int main(int argc, char* argv[])
             markerRel2.pose.position.y = tube2_t.y;
             markerRel2.pose.position.z = 0.1;
             markerRel2.pose.orientation = markerQuat;
-            markerRel2.scale.x = tubeRad;
-            markerRel2.scale.y = tubeRad;
+            markerRel2.scale.x = tubeRad*2;
+            markerRel2.scale.y = tubeRad*2;
             markerRel2.scale.z = 0.2;
             markerRel2.color.a = 1.0;
             markerRel2.color.r = 1.0;
@@ -521,8 +548,8 @@ int main(int argc, char* argv[])
             markerRel3.pose.position.y = tube3_t.y;
             markerRel3.pose.position.z = 0.1;
             markerRel3.pose.orientation = markerQuat;
-            markerRel3.scale.x = tubeRad;
-            markerRel3.scale.y = tubeRad;
+            markerRel3.scale.x = tubeRad*2;
+            markerRel3.scale.y = tubeRad*2;
             markerRel3.scale.z = 0.2;
             markerRel3.color.a = 1.0;
             markerRel3.color.r = 1.0;
@@ -555,8 +582,8 @@ int main(int argc, char* argv[])
             markerRel4.pose.position.y = tube4_t.y;
             markerRel4.pose.position.z = 0.1;
             markerRel4.pose.orientation = markerQuat;
-            markerRel4.scale.x = tubeRad;
-            markerRel4.scale.y = tubeRad;
+            markerRel4.scale.x = tubeRad*2;
+            markerRel4.scale.y = tubeRad*2;
             markerRel4.scale.z = 0.2;
             markerRel4.color.a = 1.0;
             markerRel4.color.r = 1.0;
@@ -590,8 +617,8 @@ int main(int argc, char* argv[])
             markerRel5.pose.position.y = tube5_t.y;
             markerRel5.pose.position.z = 0.1;
             markerRel5.pose.orientation = markerQuat;
-            markerRel5.scale.x = tubeRad;
-            markerRel5.scale.y = tubeRad;
+            markerRel5.scale.x = tubeRad*2;
+            markerRel5.scale.y = tubeRad*2;
             markerRel5.scale.z = 0.2;
             markerRel5.color.a = 1.0;
             markerRel5.color.r = 1.0;
@@ -624,8 +651,8 @@ int main(int argc, char* argv[])
             markerRel6.pose.position.y = tube6_t.y;
             markerRel6.pose.position.z = 0.1;
             markerRel6.pose.orientation = markerQuat;
-            markerRel6.scale.x = tubeRad;
-            markerRel6.scale.y = tubeRad;
+            markerRel6.scale.x = tubeRad*2;
+            markerRel6.scale.y = tubeRad*2;
             markerRel6.scale.z = 0.2;
             markerRel6.color.a = 1.0;
             markerRel6.color.r = 1.0;
@@ -650,6 +677,100 @@ int main(int argc, char* argv[])
             path.poses.push_back(poseStamp);
             path_pub.publish(path);
             twist_received = false;
+
+            /*************
+             * Publish simulated lidar scanner messages
+             * **********/
+            std::vector<float> lidarRanges(360, maxRange+1);
+            double tubeAngle;                
+            double lidarAngle;
+
+            for (auto marker : markerArray.markers)
+            {
+                // angle of the tube relative to the world [-180, 180]
+                int tubeAngle = round(rad2deg(atan2(marker.pose.position.y, marker.pose.position.x)));
+
+                // shift the angle from [-180, 180] to [0, 359]
+                if (tubeAngle < 0)
+                {
+                    tubeAngle += 360;
+                }
+
+                // find (x1, y1), location of the turtle relative to the tube
+                double x1 = ninjaTurtle.getX() - marker.pose.position.x;
+                double y1 = ninjaTurtle.getY() - marker.pose.position.y;
+
+                // look for points -20 and +20 degrees from the angle of the tube
+                for (int i = tubeAngle - 20; i < tubeAngle + 20; ++i)
+                {
+                    // find (x2, y2), based on the angle of the lidar scanner
+                    double x2 = x1 + maxRange * cos(deg2rad(i));
+                    double y2 = y1 + maxRange * sin(deg2rad(i));
+                    
+                    double dx = x2 - x1;
+                    double dy = y2 - y1;
+                    double dr = sqrt(pow(dx, 2) + pow(dy, 2));
+                    double det = x1*y2 - x2*y1;
+                    double dis = pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2);
+
+                    double distance;
+                    // find the points of intersection
+
+                    if (fabs(dis) < 1e-5) // tangent
+                    {
+                        double intX = (det * dy) / pow(dr, 2);
+                        double intY = -(det * dx) / pow(dr, 2);
+                        distance = sqrt(pow(intX, 2) + pow(intY, 2));
+                    } else if (fabs(dis) > 0)
+                    {
+                        double intX1 = (det * dy + (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+                        double intY1 = (-det * dx + fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+                        double dist1 = sqrt(pow(intX1 - x1, 2) + pow(intY1 - y1, 2));
+
+                        double intX2 = (det * dy - (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+                        double intY2 = (-det * dx - fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+                        double dist2 = sqrt(pow(intX2 - x1, 2) + pow(intY2 - y1, 2));
+
+                        if (dist1 < dist2)
+                        {
+                            distance = dist1;
+                        } else
+                        {
+                            distance = dist2;
+                        }
+                    }
+
+                    int index = i - int(rad2deg(ninjaTurtle.getTh()));
+                    index = index % 360;
+                    if (index < 0)
+                    {
+                        index += 360;
+                    }
+
+                    if (distance < lidarRanges[index])
+                    {
+                        lidarRanges[index] = distance;
+                    }
+                }
+            }
+
+            /************
+             * Check for Walls!!!!!!!!
+             * *********/
+
+            sensor_msgs::LaserScan scan_msg;
+            scan_msg.header.frame_id = turtle_frame_id;
+            scan_msg.header.stamp = current_time;
+            scan_msg.angle_min = 0;
+            scan_msg.angle_max = 2*PI;
+            scan_msg.angle_increment = PI / 180;
+            scan_msg.range_min = minRangeScan;
+            scan_msg.range_max = maxRangeScan;
+            scan_msg.ranges = lidarRanges;
+            scan_msg.intensities = std::vector<float> (360, 4000);
+            
+            lidar_pub.publish(scan_msg);
+
         }
 
     last_time = current_time;

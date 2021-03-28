@@ -5,25 +5,10 @@
 
 namespace rigid2d 
 {
+    // fixed this function with help of Nathaniel Nyberg
     double normalize_angle(double rad)
     {
-        double radMod, newRad;
-
-        radMod = std::fmod(rad, 2*PI);
-        
-        if (radMod > 0 && radMod < PI)
-        {
-            newRad = radMod;
-        } else if (radMod < 0 && radMod > -PI)
-        {
-            newRad = radMod;
-        } else if (radMod > 0 && radMod > PI)
-        {
-            newRad = radMod - 2*PI;
-        } else if (radMod < 0 && radMod < -PI)
-        {
-            newRad = radMod + 2*PI;
-        }
+        double newRad = atan2(sin(rad),cos(rad));
         return newRad;
     }
 

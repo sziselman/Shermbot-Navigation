@@ -16,6 +16,13 @@ namespace circle_fit
     /// \param data - vector of clustered points
     /// \return a cylindrical marker
     visualization_msgs::Marker CircleFit(std::vector<geometry_msgs::Point> data);
+
+    /// \brief function that clusters points in groups corresponding to individual landmarks
+    /// \param minRange - the minimum range that the scanner can detect
+    /// \param maxRange - the maximum range that the scanner can detect
+    /// \param ranges - the vector of ranges that the lidar scanner detects
+    /// \return a vector of "clusters" that contain points for each cluster
+
 }
 
 #endif
