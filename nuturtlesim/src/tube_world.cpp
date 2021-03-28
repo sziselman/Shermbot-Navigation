@@ -712,8 +712,6 @@ int main(int argc, char* argv[])
              * Publish simulated lidar scanner messages
              * **********/
             std::vector<float> lidarRanges(360, maxRange+1);
-            double tubeAngle;                
-            double lidarAngle;
 
             for (auto marker : markerArray.markers)
             {
@@ -840,7 +838,6 @@ int main(int argc, char* argv[])
                 {
                     lidarRanges[wallIndex] = dist4;
                 }
-
             }
 
             sensor_msgs::LaserScan scan_msg;

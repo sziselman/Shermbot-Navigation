@@ -113,5 +113,67 @@ namespace circle_fit
         return marker;
     }
     
+    std::vector<std::vector<geometry_msgs::Point>> ClusterPoints(std::vector<float> ranges, double minRange, double maxRange)
+    {
+        std::vector<std::vector<geometry_msgs::Point>> clusters;
 
+        int angle = 0;
+        double threshold = 0.025;
+
+        std::vector<geometry_msgs::Point> currCluster;
+
+        while (angle < 359)
+        {
+            // if the point is out of range, then ignore it
+            if ((ranges[angle] > maxRange) || (ranges[angle] < minRange))
+            {
+                angle += 1;
+                continue;
+            }
+
+            // use small angle approximation to approximate the distance between the current point and the next point
+            int currAngle = angle;
+            int nextAngle = angle + 1;
+
+            if (nextAngle == 360)
+            {
+                nextAngle = 0;
+            }
+
+            double currDist = ranges[currAngle];
+            double nextDist = ranges[nextAngle];
+
+            geometry_msgs::Point point;
+            point.x = ranges[currAngle] * cos(currAngle);
+            point.y = ranges[currAngle] * sin(currAngle);
+
+            // if the distance between the two points is less than the threshold
+            if (fabs(currDist - nextDist) > threshold)
+            {
+                // add point to the cluster and move to the next point
+                currCluster.push_back(point);
+                angle += 1;
+            } else // if the distance between the points is greater than the threshold
+            {
+                // add current point to the cluster
+                currCluster.push_back(point);
+                
+                // add cluster to the vector of clusters
+                clusters.push_back(currCluster);
+
+                // create new cluster
+                currCluster.clear();
+                angle += 1;
+            }
+        }
+
+        // if cluster has less than 3 points, discard it
+        for (int i = 0; i < clusters.size(); ++i)
+        {
+            if (clusters[i].size() < 3)
+            {
+                clusters.erase(clusters.begin() + i);
+            }
+        }
+    }
 }
