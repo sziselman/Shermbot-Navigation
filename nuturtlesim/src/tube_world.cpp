@@ -54,6 +54,31 @@ static bool twist_received = false;
  * ********/
 void twistCallback(const geometry_msgs::Twist msg);
 
+geometry_msgs::Point LineToLine(geometry_msgs::Point point1, geometry_msgs::Point point2, geometry_msgs::Point point3, geometry_msgs::Point point4)
+    {
+        double x1 = point1.x;
+        double y1 = point1.y;
+
+        double x2 = point2.x;
+        double y2 = point2.y;
+
+        double x3 = point3.x;
+        double y3 = point3.y;
+
+        double x4 = point4.x;
+        double y4 = point4.y;
+
+        double det12 = x1*y2 - x2*y1;
+        double det34 = x3*y4 - x4*y3;
+        double det1234 = (x1-x2)*(y3-y4) - (x3-x4)*(y1-y2);
+
+        geometry_msgs::Point intercept;
+        intercept.x = ((det12*(x3-x4) - det34*(x1-x2))) / det1234;
+        intercept.y = ((det12*(y3-y4) - det34*(y1-y2))) / det1234;
+
+        return intercept;
+    }
+
 /***********
  * get_random() function
  * ********/
@@ -148,6 +173,7 @@ int main(int argc, char* argv[])
     ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
     ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", frequency, latch);
     ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency);
+    ros::Publisher wall_pub = n.advertise<visualization_msgs::Marker>("/wall", frequency);
     // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", frequency);
@@ -207,9 +233,9 @@ int main(int argc, char* argv[])
         marker1.scale.y = tubeRad*2;
         marker1.scale.z = 0.2;
         marker1.color.a = 1.0;
-        marker1.color.r = 1.0;
-        marker1.color.g = 1.0;
-        marker1.color.b = 1.0;
+        marker1.color.r = 250. / 255.;
+        marker1.color.g = 192. / 255.;
+        marker1.color.b = 221. / 255.;
         marker1.frame_locked = true;
 
         markerArray.markers.push_back(marker1);
@@ -230,9 +256,9 @@ int main(int argc, char* argv[])
         marker2.scale.y = tubeRad*2;
         marker2.scale.z = 0.2;
         marker2.color.a = 1.0;
-        marker2.color.r = 1.0;
-        marker2.color.g = 1.0;
-        marker2.color.b = 1.0;
+        marker2.color.r = 250. / 255.;
+        marker2.color.g = 192. / 255.;
+        marker2.color.b = 221. / 255.;
         marker2.frame_locked = true;
 
         markerArray.markers.push_back(marker2);
@@ -253,9 +279,9 @@ int main(int argc, char* argv[])
         marker3.scale.y = tubeRad*2;
         marker3.scale.z = 0.2;
         marker3.color.a = 1.0;
-        marker3.color.r = 1.0;
-        marker3.color.g = 1.0;
-        marker3.color.b = 1.0;
+        marker3.color.r = 250. / 255.;
+        marker3.color.g = 192. / 255.;
+        marker3.color.b = 221. / 255.;
         marker3.frame_locked = true;
 
         markerArray.markers.push_back(marker3);
@@ -276,9 +302,9 @@ int main(int argc, char* argv[])
         marker4.scale.y = tubeRad*2;
         marker4.scale.z = 0.2;
         marker4.color.a = 1.0;
-        marker4.color.r = 1.0;
-        marker4.color.g = 1.0;
-        marker4.color.b = 1.0;
+        marker4.color.r = 250. / 255.;
+        marker4.color.g = 192. / 255.;
+        marker4.color.b = 221. / 255.;
         marker4.frame_locked = true;
 
         markerArray.markers.push_back(marker4);
@@ -299,9 +325,9 @@ int main(int argc, char* argv[])
         marker5.scale.y = tubeRad*2;
         marker5.scale.z = 0.2;
         marker5.color.a = 1.0;
-        marker5.color.r = 1.0;
-        marker5.color.g = 1.0;
-        marker5.color.b = 1.0;
+        marker5.color.r = 250. / 255.;
+        marker5.color.g = 192. / 255.;
+        marker5.color.b = 221. / 255.;
         marker5.frame_locked = true;
 
         markerArray.markers.push_back(marker5);
@@ -322,13 +348,14 @@ int main(int argc, char* argv[])
         marker6.scale.y = tubeRad*2;
         marker6.scale.z = 0.2;
         marker6.color.a = 1.0;
-        marker6.color.r = 1.0;
-        marker6.color.g = 1.0;
-        marker6.color.b = 1.0;
+        marker6.color.r = 250. / 255.;
+        marker6.color.g = 192. / 255.;
+        marker6.color.b = 221. / 255.;
         marker6.frame_locked = true;
 
         markerArray.markers.push_back(marker6);
 
+        // walls
         visualization_msgs::Marker wall;
         geometry_msgs::Point upLeft, upRight, loLeft, loRight;
 
@@ -353,11 +380,14 @@ int main(int argc, char* argv[])
         wall.points.push_back(upRight);
         wall.points.push_back(loRight);
         wall.points.push_back(loLeft);
+        wall.points.push_back(upLeft);
         wall.scale.x = 0.01;
-        wall.color.a = 0.0;
-        wall.color.r = 250 / 255;
-        wall.color.g = 218 / 255;
-        wall.color.b = 221 / 255;
+        wall.color.a = 1;
+        wall.color.r = 250. / 255.;
+        wall.color.g = 192. / 255.;
+        wall.color.b = 221. / 255.;
+        
+        wall_pub.publish(wall);
 
         // markerArray.markers.push_back(wall);
 
@@ -757,6 +787,59 @@ int main(int argc, char* argv[])
             /************
              * Check for Walls!!!!!!!!
              * *********/
+            for (int a = 0; a < 360; ++a)
+            {
+                geometry_msgs::Point point1, point2;
+
+                point1.x = ninjaTurtle.getX();
+                point1.y = ninjaTurtle.getY();
+
+                point2.x = point1.x + maxRange * cos(deg2rad(a));
+                point2.y = point1.y + maxRange * sin(deg2rad(a));
+
+                geometry_msgs::Point intercept;
+
+                double intDist = maxRangeScan+1;
+                // check top line (upper left to upper right)
+                geometry_msgs::Point inter1 = LineToLine(point1, point2, wall.points[0], wall.points[1]);
+                if ((a > 90) && (a < 270))
+                {
+                    intDist = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
+                }
+
+                // check right line (upper right to lower right)
+                geometry_msgs::Point inter2 = LineToLine(point1, point2, wall.points[1], wall.points[2]);
+                if ((a > 0) && (a < 180))
+                {
+                    intDist = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
+                }
+
+                // check bottom line (lower right to lower left)
+                geometry_msgs::Point inter3 = LineToLine(point1, point2, wall.points[2], wall.points[3]);
+                if ((a > 180) && (a < 360))
+                {
+                    intDist = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
+                }
+                
+                // check left line (lower left to upper left)
+                geometry_msgs::Point inter4 = LineToLine(point1, point2, wall.points[3], wall.points[4]);
+                if ((a > 270) && (a < 90))
+                {
+                    intDist = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
+                }
+
+                int lineIndex = a - int(rad2deg(ninjaTurtle.getTh()));
+                lineIndex = lineIndex % 360;
+                if (lineIndex < 0)
+                {
+                    lineIndex += 360;
+                }
+
+                if (intDist < lidarRanges[lineIndex])
+                {
+                    lidarRanges[lineIndex] = intDist;
+                }
+            }
 
             sensor_msgs::LaserScan scan_msg;
             scan_msg.header.frame_id = turtle_frame_id;
