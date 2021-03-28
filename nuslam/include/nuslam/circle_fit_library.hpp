@@ -10,8 +10,6 @@
 
 namespace circle_fit
 {
-    using namespace arma;
-    
     /// \brief function that takes a vector of clustered points and returns a cylinder marker
     /// \param data - vector of clustered points
     /// \return a cylindrical marker
@@ -23,6 +21,10 @@ namespace circle_fit
     /// \param ranges - the vector of ranges that the lidar scanner detects
     /// \return a vector of "clusters" that contain points for each cluster
     std::vector<std::vector<geometry_msgs::Point>> ClusterPoints(std::vector<float> ranges, double minRange, double maxRange);
+
+    /// \brief a function that clasifies clusters as circle or not circle
+    /// \param clusters - the vector of clusters (vectors of points)
+    /// \return - boolean value true (if circle) and false (if not circle)
 }
 
 #endif

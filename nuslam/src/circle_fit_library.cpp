@@ -176,4 +176,45 @@ namespace circle_fit
             }
         }
     }
+
+    bool ClassifyCluster(std::vector<geometry_msgs::Point> cluster)
+    {
+        geometry_msgs::Point point1, point2;
+        point1 = cluster[0];
+        point2 = cluster.back();
+
+        std::vector<double> angles;
+
+        for (int i = 1; i < cluster.size() - 1; ++i)
+        {
+            // calculate the angle from p1 to p to p2
+            geometry_msgs::Point p = cluster[i];
+
+            double a = sqrt(pow(p.x - point1.x, 2) + pow(p.y - point1.y, 2));
+            double b = sqrt(pow(p.x - point2.x, 2) + pow(p.y - point2.y, 2));
+            double c = sqrt(pow(point1.x - point2.x, 2) + pow(point1.y - point2.y, 2));
+
+            double angle = acos((pow(a, 2) + pow(b, 2) - pow(c, 2)) / (2 * a * b));
+
+            angles.push_back(angle);
+        }
+
+        double mean = std::accumulate(angles.begin(), angles.end(), 0) / angles.size();
+
+        double sum = 0;
+        for (double a : angles)
+        {
+            sum += pow(a - mean, 2);
+        }
+
+        double stdev = sqrt(sum / (cluster.size() - 1));
+
+        if ((stdev > 0.15) && (mean > 90) && (mean < 135))
+        {
+            return true;
+        } else 
+        {
+            return false;
+        }
+    }
 }
