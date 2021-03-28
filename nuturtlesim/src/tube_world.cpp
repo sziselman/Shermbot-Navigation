@@ -799,46 +799,48 @@ int main(int argc, char* argv[])
 
                 geometry_msgs::Point intercept;
 
-                double intDist = maxRangeScan+1;
-                // check top line (upper left to upper right)
+                int wallIndex = round(a - int(rad2deg(ninjaTurtle.getTh())));
+                wallIndex = wallIndex % 360;
+                if (wallIndex < 0)
+                {
+                    wallIndex += 360;
+                } else if (wallIndex > 359)
+                {
+                    wallIndex -= 360;
+                }
+
+                // check ground truth top line (upper left to upper right)
                 geometry_msgs::Point inter1 = LineToLine(point1, point2, wall.points[0], wall.points[1]);
-                if ((a > 90) && (a < 270))
+                double dist1 = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
+                if ((a < 180) && (dist1 < lidarRanges[wallIndex]))
                 {
-                    intDist = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
+                    lidarRanges[wallIndex] = dist1;
                 }
-
-                // check right line (upper right to lower right)
+            
+                // check ground truth right line (upper right to lower right)
                 geometry_msgs::Point inter2 = LineToLine(point1, point2, wall.points[1], wall.points[2]);
-                if ((a > 0) && (a < 180))
+                double dist2 = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
+                if (((a < 90) || (a > 270)) && (dist2 < lidarRanges[wallIndex]))
                 {
-                    intDist = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
+                    lidarRanges[wallIndex] = dist2;
                 }
 
-                // check bottom line (lower right to lower left)
+                // check ground truth bottom line (lower right to lower left)
                 geometry_msgs::Point inter3 = LineToLine(point1, point2, wall.points[2], wall.points[3]);
-                if ((a > 180) && (a < 360))
+                double dist3 = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
+                if ((a > 180) && (dist3 < lidarRanges[wallIndex]))
                 {
-                    intDist = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
+                    lidarRanges[wallIndex] = dist3;
                 }
                 
-                // check left line (lower left to upper left)
+                // check ground truth left line (lower left to upper left)
                 geometry_msgs::Point inter4 = LineToLine(point1, point2, wall.points[3], wall.points[4]);
-                if ((a > 270) && (a < 90))
+                double dist4 = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
+                if ((a > 90) && (a < 269) && (dist4 < lidarRanges[wallIndex]))
                 {
-                    intDist = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
+                    lidarRanges[wallIndex] = dist4;
                 }
 
-                int lineIndex = a - int(rad2deg(ninjaTurtle.getTh()));
-                lineIndex = lineIndex % 360;
-                if (lineIndex < 0)
-                {
-                    lineIndex += 360;
-                }
-
-                if (intDist < lidarRanges[lineIndex])
-                {
-                    lidarRanges[lineIndex] = intDist;
-                }
             }
 
             sensor_msgs::LaserScan scan_msg;
