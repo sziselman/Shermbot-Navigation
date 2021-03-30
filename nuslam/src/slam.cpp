@@ -189,8 +189,6 @@ int main(int argc, char* argv[])
             /***********
              * Get twist from new wheel angles and update configuration
              * ********/
-            // Twist2D twist_vel = ninjaTurtle.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
-
             ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
 
             /**********

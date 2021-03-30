@@ -31,6 +31,7 @@ namespace slam_library
 
             int len;                // size of the state vector
             int n;                  // number of landmarks
+            int N = 0;              // the number of landmarks visited
 
             /// \brief initialize the initial covariance matrix
             /// \param num - the number of landmarks
@@ -92,6 +93,11 @@ namespace slam_library
             /// \param j - the landmark j
             /// \return 2x(3+2n) matrix, the derivative of h_j wrt the state
             mat getH(int j);
+
+            /// \brief function used for data association
+            /// \param z_i : the range bearing measurement
+            /// \return an integer representing the marker id
+            int DataAssociation(vec z_i);
     };
 }
 

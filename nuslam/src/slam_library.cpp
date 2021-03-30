@@ -186,4 +186,35 @@ namespace slam_library
         H(1, 4+2*(j-1)) = dx / d;
         return H;
     }
+
+    int ExtendedKalman::DataAssociation(vec z_i)
+    {
+        vec temp(3+2*(N+1));
+        double threshold = 50;
+        double limit = .5;
+        
+        if (N==0)
+        {
+            N += 1;
+            return N;
+        }
+
+        temp(span(0, 2+2*N)) = stateVec(span(0, 2+2*N));
+        temp(3+2*N) = temp(1) + z_i(0) * cos(z_i(1) + temp(0));
+        temp(4+2*N) = temp(2) + z_i(0) * sin(z_i(1) + temp(0));
+
+        for (int i = 0; i < N; i++)
+        {
+            // compute the linearized measurement model
+            mat H_k = H(N);
+            // compute the covariance
+            mat psi_k = H_k * cov * H_k.t() + sensorNoise;
+            // compute the expected measurement
+            vec z_hat = h(i);
+            // compute the mahalanobis distance
+            mat d_k = (z_i - z_hat) * psi_k.i() * (z_i - z_hat);
+            double mahalanobis = d_k(0);
+            
+        }
+    }
 }
