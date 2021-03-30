@@ -9,6 +9,11 @@
 ///     wheelBase : the distance between the robot's wheels
 /// PUBLISHES:
 ///     sensor_msgs/JointState on the joint state topic
+///     visualization_msgs/MarkerArray (the ground truth markers)
+///     visualization_msgs/MarkerArray (the fake sensor readings)
+///     visualization_msgs/Marker (the walls)
+///     nav_msgs/Path (the real path that the robot follows)
+///     sensor_msgs/LaserScan (the lidar sensor messages)
 /// SUBSCRIBES:
 ///     geometry_msgs/Twist on the cmd_vel topic
 /// SERVICES:
