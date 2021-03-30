@@ -1,6 +1,7 @@
 /// \file circle_fit_library.cpp
 /// \brief a library that implements circle fit algorithm
 
+#include "rigid2d/rigid2d.hpp"
 #include "nuslam/circle_fit_library.hpp"
 #include <cmath>
 
@@ -22,7 +23,7 @@ namespace circle_fit
         }
         
         // shift centroid so that the center is at the origin
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < n; i++)
         {
             data[i].x -= x_hat;
             data[i].y -= y_hat;
@@ -30,7 +31,7 @@ namespace circle_fit
 
         // form the data matrix from the n data points
         mat Z(n, 4, fill::ones);
-        for (int j = 0; j < n; ++j)
+        for (int j = 0; j < n; j++)
         {
             Z(j, 0) = pow(data[j].x, 2) + pow(data[j].y, 2);
             Z(j, 1) = data[j].x;
@@ -59,10 +60,16 @@ namespace circle_fit
         vec s;
         mat V;
         svd(U, s, V, Z);
-
+        
         // solve for A based on sigma_4
         vec A;
 
+        if (s.size() < 4)
+        {
+            visualization_msgs::Marker marker;
+            marker.id = -1;
+            return marker;
+        }
         if (s(3) < 1e-12)
         {
             A = V.col(3);
@@ -78,7 +85,7 @@ namespace circle_fit
             int eig_index = 0;
             double eig_max = INT_MAX;
 
-            for (int i = 0; i < eigval.size(); ++i)
+            for (int i = 0; i < eigval.size(); i++)
             {
                 if (eigval(i) > 0 && eigval(i) < eig_max)
                 {
@@ -95,15 +102,17 @@ namespace circle_fit
         double b = -A(2) / (2*A(0));
         double R2 = (pow(A(1),2) + pow(A(2), 2) - 4*A(0)*A(3)) / (4*pow(A(0),2));
 
-        // create the marker to return
+        // // create the marker to return
         visualization_msgs::Marker marker;
+        marker.header.frame_id = "turtle";
         marker.ns = "real";
-        marker.id = 1;
         marker.type = visualization_msgs::Marker::CYLINDER;
         marker.pose.position.x = a + x_hat;
         marker.pose.position.y = b + y_hat;
+        marker.pose.position.z = 0.125;
         marker.scale.x = sqrt(R2);
         marker.scale.y = sqrt(R2);
+        marker.scale.z = 0.25;
         marker.color.a = 1.0;
         marker.color.r = 1.0;
         marker.color.g = 1.0;
@@ -115,17 +124,18 @@ namespace circle_fit
     
     std::vector<std::vector<geometry_msgs::Point>> ClusterPoints(std::vector<float> ranges, double minRange, double maxRange)
     {
+        using namespace rigid2d;
         std::vector<std::vector<geometry_msgs::Point>> clusters;
 
         int angle = 0;
-        double threshold = 0.025;
+        double threshold = 0.07;
 
         std::vector<geometry_msgs::Point> currCluster;
 
-        while (angle < 359)
+        while (angle < 360)
         {
             // if the point is out of range, then ignore it
-            if ((ranges[angle] > maxRange) || (ranges[angle] < minRange))
+            if ((ranges[angle] > maxRange) | (ranges[angle] < minRange))
             {
                 angle += 1;
                 continue;
@@ -144,15 +154,25 @@ namespace circle_fit
             double nextDist = ranges[nextAngle];
 
             geometry_msgs::Point point;
-            point.x = ranges[currAngle] * cos(currAngle);
-            point.y = ranges[currAngle] * sin(currAngle);
+            point.x = ranges[currAngle] * cos(deg2rad(currAngle));
+            point.y = ranges[currAngle] * sin(deg2rad(currAngle));
 
             // if the distance between the two points is less than the threshold
-            if (fabs(currDist - nextDist) > threshold)
+            if (fabs(currDist - nextDist) < threshold)
             {
-                // add point to the cluster and move to the next point
-                currCluster.push_back(point);
-                angle += 1;
+                // // add point to the cluster and move to the next point
+                // currCluster.push_back(point);
+                // angle += 1;
+
+                // if at current is 359 and next is 0
+                if (nextAngle < angle)
+                {
+                    clusters[0].push_back(point);
+                } else // all other scenarios
+                {
+                    currCluster.push_back(point);
+                    angle += 1;
+                }
             } else // if the distance between the points is greater than the threshold
             {
                 // add current point to the cluster
@@ -165,30 +185,36 @@ namespace circle_fit
                 currCluster.clear();
                 angle += 1;
             }
+
+            if (nextAngle < angle){
+                break;
+            }
         }
 
         // if cluster has less than 3 points, discard it
-        for (int i = 0; i < clusters.size(); ++i)
+        for (int i = 0; i < clusters.size(); i++)
         {
             if (clusters[i].size() < 3)
             {
                 clusters.erase(clusters.begin() + i);
             }
         }
+        return clusters;
     }
 
     bool ClassifyCluster(std::vector<geometry_msgs::Point> cluster)
     {
-        geometry_msgs::Point point1, point2;
+        geometry_msgs::Point point1, point2, p2, p3;
         point1 = cluster[0];
         point2 = cluster.back();
 
         std::vector<double> angles;
 
-        for (int i = 1; i < cluster.size() - 1; ++i)
+        for (int i = 1; i < cluster.size() - 1; i++)
         {
             // calculate the angle from p1 to p to p2
             geometry_msgs::Point p = cluster[i];
+            // geometry_msgs::Point p1 = cluster[i];
 
             double a = sqrt(pow(p.x - point1.x, 2) + pow(p.y - point1.y, 2));
             double b = sqrt(pow(p.x - point2.x, 2) + pow(p.y - point2.y, 2));
@@ -199,7 +225,12 @@ namespace circle_fit
             angles.push_back(angle);
         }
 
-        double mean = std::accumulate(angles.begin(), angles.end(), 0) / angles.size();
+        double mean = 0;
+        for (double angle : angles)
+        {
+            mean += angle;
+        }
+        mean /= angles.size();
 
         double sum = 0;
         for (double a : angles)
@@ -209,7 +240,7 @@ namespace circle_fit
 
         double stdev = sqrt(sum / (cluster.size() - 1));
 
-        if ((stdev > 0.15) && (mean > 90) && (mean < 135))
+        if (stdev < 10)
         {
             return true;
         } else 

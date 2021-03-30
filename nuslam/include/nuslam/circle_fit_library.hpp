@@ -23,8 +23,9 @@ namespace circle_fit
     std::vector<std::vector<geometry_msgs::Point>> ClusterPoints(std::vector<float> ranges, double minRange, double maxRange);
 
     /// \brief a function that clasifies clusters as circle or not circle
-    /// \param clusters - the vector of clusters (vectors of points)
+    /// \param cluster - the vector of clusters (vectors of points)
     /// \return - boolean value true (if circle) and false (if not circle)
+    bool ClassifyCluster(std::vector<geometry_msgs::Point> cluster);
 }
 
 #endif

@@ -10,9 +10,7 @@ Panels:
         - /LaserScan1
         - /TF1
         - /MarkerArray1
-        - /RobotModel1
         - /Marker1
-        - /Marker1/Status1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 1526
   - Class: rviz/Selection
@@ -140,22 +138,6 @@ Visualization Manager:
         real: true
       Queue Size: 100
       Value: true
-    - Alpha: 1
-      Class: rviz/RobotModel
-      Collision Enabled: false
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: Links in Alphabetic Order
-      Name: RobotModel
-      Robot Description: robot_description
-      TF Prefix: ""
-      Update Interval: 0
-      Value: true
-      Visual Enabled: true
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /wall

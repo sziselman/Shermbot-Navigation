@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     n.getParam("wall_height", wallHeight);
 
     /***********
-     * Initialize mroe local variables
+     * Initialize more local variables
      * ********/
     std::normal_distribution<> gaus_twist(0, twistNoise);
 
@@ -174,7 +174,6 @@ int main(int argc, char* argv[])
     ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", frequency, latch);
     ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency);
     ros::Publisher wall_pub = n.advertise<visualization_msgs::Marker>("/wall", frequency);
-    // ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", frequency);
     ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
     ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", frequency);
 
@@ -711,7 +710,8 @@ int main(int argc, char* argv[])
             /*************
              * Publish simulated lidar scanner messages
              * **********/
-            std::vector<float> lidarRanges(360, maxRange+1);
+            std::vector<float> lidarRanges(360, maxRangeScan+1);
+            std::fill(lidarRanges.begin(),lidarRanges.end(),maxRangeScan+1);
 
             for (auto marker : markerArray.markers)
             {
