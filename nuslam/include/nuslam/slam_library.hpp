@@ -94,6 +94,10 @@ namespace slam_library
             /// \return 2x(3+2n) matrix, the derivative of h_j wrt the state
             mat getH(int j);
 
+            /// \brief gets the matrix H_j (to use the temporary state vector instead of estimated)
+            /// spoke with Nathaniel Nyberg to create this function for data association
+            mat getH2(int j, vec temp);
+
             /// \brief function used for data association
             /// \param z_i : the range bearing measurement
             /// \return an integer representing the marker id

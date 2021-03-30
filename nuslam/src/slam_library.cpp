@@ -187,34 +187,85 @@ namespace slam_library
         return H;
     }
 
+    mat ExtendedKalman::getH2(int j, vec temp)
+    {
+        mat tempH;
+
+        double dx, dy, d;
+
+        if (j >= n)
+        {
+            dx = temp(1+2*j) - temp(1);
+            dy = temp(2+2*j) - temp(2);
+            d = pow(dx, 2) + pow(dy, 2);
+
+            tempH = mat(2, 3+2*(n+1), fill::zeros);
+        } else
+        {
+            dx = stateVec(1+2*j) - stateVec(1);
+            dy = stateVec(2+2*j) - stateVec(2);
+            d = pow(dx, 2) + pow(dy, 2);
+
+            tempH = mat(2, 3+2*n, fill::zeros);
+        }
+
+        tempH(1, 0) = -1;
+        tempH(0, 1) = -dx / sqrt(d);
+        tempH(1, 1) = dy / d;
+        tempH(0, 2) = -dy / sqrt(d);
+        tempH(1, 2) = -dx / d;
+        tempH(0, 3+2*j) = dx / sqrt(d);
+        tempH(1, 3+2*j) = -dy / d;
+        tempH(0, 4+2*j) = dy / sqrt(d);
+        tempH(1, 4+2*j) = dx / d;
+        return tempH;
+    }
+
     int ExtendedKalman::DataAssociation(vec z_i)
     {
         vec temp(3+2*(N+1));
-        double threshold = 50;
-        double limit = .5;
+        double max_threshold = 50;
+        double min_threshold = .5;
         
         if (N==0)
         {
-            N += 1;
-            return N;
+            // initialize the seen landmark
+            stateVec(3) = stateVec(1) + z_i(0) * cos(z_i(1) + stateVec(0));
+            stateVec(4) = stateVec(2) + z_i(0) * sin(z_i(1) + stateVec(0));
+
+           return N++;
         }
 
         temp(span(0, 2+2*N)) = stateVec(span(0, 2+2*N));
         temp(3+2*N) = temp(1) + z_i(0) * cos(z_i(1) + temp(0));
         temp(4+2*N) = temp(2) + z_i(0) * sin(z_i(1) + temp(0));
 
-        for (int i = 0; i < N; i++)
+        for (int i = 1; i <= N; i++)
         {
+            stateVec.print();
             // compute the linearized measurement model
-            mat H_k = H(N);
+            mat H_k = getH(i);
+            
             // compute the covariance
             mat psi_k = H_k * cov * H_k.t() + sensorNoise;
             // compute the expected measurement
             vec z_hat = h(i);
+
             // compute the mahalanobis distance
-            mat d_k = (z_i - z_hat) * psi_k.i() * (z_i - z_hat);
+            mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
             double mahalanobis = d_k(0);
-            
+  
+            if (mahalanobis < min_threshold) // if less than min threshold
+            {
+                return i; // return the current landmark 
+            } else if ((mahalanobis > min_threshold) && (mahalanobis < max_threshold)) // if not too close yet not too far
+            {
+                return -1; // skip the landmark
+            }
+
         }
+        stateVec(3+2*N) = stateVec(1) + z_i(0) * cos(z_i(1) + stateVec(0));
+        stateVec(4+2*N) = stateVec(2) + z_i(0) * sin(z_i(1) + stateVec(0));
+        return N++;
     }
 }

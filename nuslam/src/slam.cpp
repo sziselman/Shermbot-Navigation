@@ -49,17 +49,19 @@ static rigid2d::DiffDrive ninjaTurtle;
 static rigid2d::DiffDrive teenageMutant;
 
 static sensor_msgs::JointState joint_state_msg;
-static visualization_msgs::MarkerArray marker_array;
+static visualization_msgs::MarkerArray marker_array, marker_array_fake;
 
 static double wheelBase, wheelRad;
 static bool jointState_flag = false;
 static bool markerArray_flag = false;
+static bool markerArrayFake_flag = false;
 
 /**********
  * Helper Functions
  * *******/
 void jointStateCallback(const sensor_msgs::JointState msg);
 void sensorCallback(const visualization_msgs::MarkerArray array);
+void fakeSensorCallback(const visualization_msgs::MarkerArray array);
 bool setPose(rigid2d::set_pose::Request & req, rigid2d::set_pose::Response & res);
 
 /*********
@@ -121,7 +123,8 @@ int main(int argc, char* argv[])
     ros::Publisher odomPath_pub = n.advertise<nav_msgs::Path>("/odom_path", frequency);
 
     ros::Subscriber joint_sub = n.subscribe("/joint_states", frequency, jointStateCallback);
-    ros::Subscriber sensor_sub = n.subscribe("/fake_sensor", frequency, sensorCallback);
+    ros::Subscriber sensor_sub = n.subscribe("/real_sensor", frequency, sensorCallback);
+    ros::Subscriber fake_sensor_sub = n.subscribe("/fake_sensor", frequency, fakeSensorCallback);
 
     ros::ServiceServer setPose_service = n.advertiseService("set_pose", setPose);
     ros::ServiceClient setPose_client = n.serviceClient<rigid2d::set_pose>("set_pose");
@@ -169,12 +172,6 @@ int main(int argc, char* argv[])
 
     ExtendedKalman raphael = ExtendedKalman(robotState, mapState, Q, R);
 
-    // colvec currentState(3+2*num);
-
-    // currentState = raphael.getStateVec();
-
-    // ROS_INFO_STREAM(currentState(0));
-
     while (ros::ok())
     {
         ros::spinOnce();
@@ -192,7 +189,7 @@ int main(int argc, char* argv[])
             ninjaTurtle(joint_state_msg.position[0], joint_state_msg.position[1]);
 
             /**********
-             * If a marker array is received
+             * If a marker array from real sensor is received
              * *******/
             if (markerArray_flag)
             {
@@ -226,6 +223,95 @@ int main(int argc, char* argv[])
                 covNew = A * cov * A.t() + Q_bar;
 
                 raphael.updateStateVec(newState);
+                
+                raphael.updateCov(covNew);
+                
+                // for loop that goes through each marker that was measured
+                for (auto marker: marker_array.markers)
+                {
+                    // int j = marker.id + 1;
+
+                    // put the marker (x,y) location in range-bearing form
+                    colvec rangeBearing(2);
+                    rangeBearing = RangeBearing(marker.pose.position.x, marker.pose.position.y);
+
+                    // data association
+                    int j = raphael.DataAssociation(rangeBearing);
+
+                    // compute theoretical measurements, given the current state estimate
+                    colvec z_hat(2);
+                    z_hat = raphael.h(j);
+
+                    // compute the Kalman gain from the linearized measurement model
+                    mat K_j(3+2*num, 2);
+                    K_j = raphael.KalmanGain(j);
+
+                    // compute the posterior state update
+                    colvec currentEstimate(3+2*num);
+                    currentEstimate = raphael.getStateVec();
+
+                    colvec stateUpdate(3+2*num);
+                    colvec z_diff(2);
+                    z_diff = rangeBearing - z_hat;
+                    z_diff(1) = normalize_angle(z_diff(1));
+                    stateUpdate = currentEstimate + K_j * z_diff;
+
+                    // compute the posterior covariance
+                    mat currentCov(3+2*num, 3+2*num);
+                    currentCov = raphael.getCov();
+
+                    mat Identity(3+2*num, 3+2*num, fill::eye);
+
+                    mat H_j(2, 3+2*num);
+                    H_j = raphael.getH(j);
+
+                    mat newCov(3+2*num, 3+2*num);
+                    newCov = (Identity - K_j * H_j) * currentCov;
+
+                    // update the state and covariance
+                    raphael.updateStateVec(stateUpdate);
+                    raphael.updateCov(newCov);
+                }
+                
+                markerArray_flag = false;
+            }
+
+            /**********
+             * If a marker array from fake sensor is received
+             * *******/
+            if (markerArrayFake_flag)
+            {
+                // // get velocities from new wheel angle
+                // made a separate diffdrive object since marker array messages may be sent at a different freuqancy
+                Twist2D slam_twist = teenageMutant.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+                teenageMutant(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+                /***********
+                 *  predict: update the estimate using the model
+                 * ********/
+                // update the estimate using the model
+                colvec prevState(3+2*num);
+                prevState = raphael.getStateVec();
+
+                colvec newState(3+2*num);
+                newState = raphael.g(prevState, slam_twist);
+
+                // propagate the uncertainty using the linearized state transition model
+                mat Q_bar(3+2*num, 3+2*num);
+                Q_bar = raphael.Q_bar();
+
+                mat A(3+2*num, 3+2*num);
+                A = raphael.getA(prevState, slam_twist);
+
+                mat cov(3+2*num, 3+2*num);
+                cov = raphael.getCov();
+
+                mat covNew(3+2*num, 3+2*num);
+                covNew = A * cov * A.t() + Q_bar;
+
+                raphael.updateStateVec(newState);
+                
                 raphael.updateCov(covNew);
                 
                 // for loop that goes through each marker that was measured
@@ -272,7 +358,7 @@ int main(int argc, char* argv[])
                     raphael.updateCov(newCov);
                 }
                 
-                markerArray_flag = false;
+                markerArrayFake_flag = false;
             }
 
             /**********
@@ -375,6 +461,12 @@ void sensorCallback(const visualization_msgs::MarkerArray array)
 {
     marker_array = array;
     markerArray_flag = true;
+}
+
+void fakeSensorCallback(const visualization_msgs::MarkerArray array)
+{
+    marker_array_fake = array;
+    markerArrayFake_flag = true;
 }
 
 /// \brief callback function for subscriber to joint state message

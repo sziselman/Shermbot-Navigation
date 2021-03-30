@@ -1,10 +1,20 @@
 <launch>
     <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
 
+    <arg name="real" default="true" doc="if true (message from real sensor) if false (message from fake sensor)"/>
+
     <group if="$(eval arg('robot')=='localhost')">
-        <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
-        <node pkg="nuslam" name="slam" type="slam" output="screen"/>
-        <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+        <group if="$(eval arg('real')=='true')">
+            <node pkg="nuslam" name="landmarks" type="landmarks" output="screen"/>
+            <node pkg="nuslam" name="slam" type="slam" output="screen"/>
+            <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+        </group>
+
+        <group unless="$(eval arg('real')=='true')">
+            <node pkg="nuturtlesim" name="tube_world" type="tube_world" output="screen"/>
+            <node pkg="nuslam" name="slam" type="slam" output="screen"/>
+            <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+        </group>
     </group>
 
     <group unless="$(eval arg('robot')=='localhost')">
