@@ -12,6 +12,7 @@ Panels:
         - /TF1/Tree1
         - /MarkerArray1/Namespaces1
         - /MarkerArray2
+        - /Marker1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 999
   - Class: rviz/Selection
@@ -103,14 +104,10 @@ Visualization Manager:
           Value: false
         odom:
           Value: false
-        turtle:
-          Value: true
         wheel_left_link:
           Value: false
         wheel_right_link:
           Value: false
-        world:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 0.4000000059604645
       Name: TF
@@ -118,9 +115,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          turtle:
-            {}
+        {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -156,13 +151,21 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /fake_sensor
       Name: MarkerArray
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /wall
+      Name: Marker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 108; 108; 108
@@ -191,7 +194,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.896211862564087
+      Distance: 10.82198429107666
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -228,4 +231,4 @@ Window Geometry:
     collapsed: true
   Width: 2772
   X: 606
-  Y: 228
+  Y: 80

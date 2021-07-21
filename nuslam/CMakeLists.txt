@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   message_runtime
   nav_msgs
-  nuturtlebot
+  # nuturtlebot
   rigid2d
   roscpp
   sensor_msgs

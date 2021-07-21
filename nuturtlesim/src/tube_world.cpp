@@ -5,8 +5,8 @@
 /// PARAMETERS:
 ///     left_wheel_joint : string used for publishing joint_state_message
 ///     right_wheel_joint : string used for publishing joint_state_message
-///     wheelRad : the radius of the robot's wheels
-///     wheelBase : the distance between the robot's wheels
+///     wheel_rad : the radius of the robot's wheels
+///     wheel_base : the distance between the robot's wheels
 /// PUBLISHES:
 ///     sensor_msgs/JointState on the joint state topic
 ///     visualization_msgs/MarkerArray (the ground truth markers)
@@ -49,42 +49,6 @@
 #include <vector>
 
 /***********
- * Declare global variables
- * ********/
-static geometry_msgs::Twist twist_msg;
-static bool twist_received = false;
-
-/***********
- * Helper Functions
- * ********/
-void twistCallback(const geometry_msgs::Twist msg);
-
-geometry_msgs::Point LineToLine(geometry_msgs::Point point1, geometry_msgs::Point point2, geometry_msgs::Point point3, geometry_msgs::Point point4)
-    {
-        double x1 = point1.x;
-        double y1 = point1.y;
-
-        double x2 = point2.x;
-        double y2 = point2.y;
-
-        double x3 = point3.x;
-        double y3 = point3.y;
-
-        double x4 = point4.x;
-        double y4 = point4.y;
-
-        double det12 = x1*y2 - x2*y1;
-        double det34 = x3*y4 - x4*y3;
-        double det1234 = (x1-x2)*(y3-y4) - (x3-x4)*(y1-y2);
-
-        geometry_msgs::Point intercept;
-        intercept.x = ((det12*(x3-x4) - det34*(x1-x2))) / det1234;
-        intercept.y = ((det12*(y3-y4) - det34*(y1-y2))) / det1234;
-
-        return intercept;
-    }
-
-/***********
  * get_random() function
  * ********/
 std::mt19937 & get_random()
@@ -97,283 +61,198 @@ std::mt19937 & get_random()
      return mt;
  }
 
-/***********
- * Main Function
- * ********/
-int main(int argc, char* argv[])
-{
-    using namespace rigid2d;
+class TubeWorld {
+    private:
 
-    /***********
-     * Initialize the node & node handle
-     * ********/
-    ros::init(argc, argv, "tube_world");
-    ros::NodeHandle n;
+        int frequency = 100;
+        bool latch = true;
 
-    /***********
-     * Initialize local variables
-     * ********/
-    int frequency = 10;
-    double tubeRad, wheelRad, wheelBase, maxRange, twistNoise, slipMin, slipMax, robotRad;
-    bool latch = true;
+        // variables from parameter server
+        double max_range;
+        double wheel_base, wheel_rad;
+        double tube_rad, tube_var;
 
-    double maxRangeScan, minRangeScan, scanRes, scanNoise;
-    int angleIncr, sampleNum;
+        double twist_noise;
+        double slip_min, slip_max;
+        double robot_rad;
 
-    double wallWidth, wallHeight;
-    
-    std::string world_frame_id, turtle_frame_id, left_wheel_joint, right_wheel_joint;
-    std::string odom_frame_id;
-    std::vector<double> t1_loc, t2_loc, t3_loc, t4_loc, t5_loc, t6_loc;
-    nav_msgs::Path path;
+        double max_scan_range, min_scan_range;
+        double angle_incr, sample_num;
+        double scan_res, scan_noise;
+        double wall_width, wall_height;
 
-    /***********
-     * Read parameters from parameter server
-     * ********/
-    n.getParam("max_range", maxRange);
-    n.getParam("wheel_base", wheelBase);
-    n.getParam("wheel_radius", wheelRad);
-    n.getParam("odom_frame_id", odom_frame_id);
-    n.getParam("left_wheel_joint", left_wheel_joint);
-    n.getParam("right_wheel_joint", right_wheel_joint);
+        std::string odom_frame_id, world_frame_id, turtle_frame_id, scanner_frame_id;
+        std::string left_wheel_joint, right_wheel_joint;
+        std::vector<double> t1_loc, t2_loc, t3_loc, t4_loc, t5_loc, t6_loc;
+        std::vector<std::vector<double>> tube_locs;
 
-    n.getParam("tube1_location", t1_loc);
-    n.getParam("tube2_location", t2_loc);
-    n.getParam("tube3_location", t3_loc);
-    n.getParam("tube4_location", t4_loc);
-    n.getParam("tube5_location", t5_loc);
-    n.getParam("tube6_location", t6_loc);
+        // variables
+        geometry_msgs::Twist twist_msg;
+        bool twist_received = false;
 
-    n.getParam("tube_radius", tubeRad);
-    n.getParam("world_frame_id", world_frame_id);
-    n.getParam("turtle_frame_id", turtle_frame_id);
-    n.getParam("twist_noise", twistNoise);
-    n.getParam("slip_min", slipMin);
-    n.getParam("slip_max", slipMax);
-    n.getParam("robot_radius", robotRad);
+        rigid2d::DiffDrive ninja_turtle;
 
-    n.getParam("maximum_range", maxRangeScan);
-    n.getParam("minimum_range", minRangeScan);
-    n.getParam("angle_increment", angleIncr);
-    n.getParam("sample_num", sampleNum);
-    n.getParam("resolution", scanRes);
-    n.getParam("noise_level", scanNoise);
-    n.getParam("wall_width", wallWidth);
-    n.getParam("wall_height", wallHeight);
+        sensor_msgs::JointState joint_msg;
+        nav_msgs::Path path;
+        sensor_msgs::LaserScan scan_msg;
 
-    /***********
-     * Initialize more local variables
-     * ********/
-    std::normal_distribution<> gaus_twist(0, twistNoise);
+    public:
 
-    double slipMean = (slipMin + slipMax) / 2;
-    double slipVar = slipMax - slipMean;
+        // ros objects (node handle, subs, pubs, services, etc)
+        ros::NodeHandle n;
 
-    std::normal_distribution<> slip_noise(slipMean, slipVar);
-    std::vector<std::vector<double>> tube_locs{t1_loc, t2_loc, t3_loc, t4_loc, t5_loc, t6_loc};
+        ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", 10, latch);
+        ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10);
+        ros::Publisher wall_pub = n.advertise<visualization_msgs::Marker>("/wall", 10, latch);
+        ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", 10);
+        ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", 10);
+        ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", 10);
 
+        ros::Subscriber twist_sub = n.subscribe("/cmd_vel", 10, &TubeWorld::twistCallback, this);
+        tf2_ros::TransformBroadcaster broadcaster;
 
-    /***********
-     * Define publisher, subscriber, service and clients
-     * ********/
-    ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", frequency);
-    ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", frequency, latch);
-    ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", frequency);
-    ros::Publisher wall_pub = n.advertise<visualization_msgs::Marker>("/wall", frequency);
-    ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", frequency);
-    ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", frequency);
+        void load_parameters() {
+            /***********
+             * Read parameters from parameter server
+             * ********/
+            n.getParam("max_range", max_range);
+            n.getParam("wheel_base", wheel_base);
+            n.getParam("wheel_radius", wheel_rad);
+            n.getParam("odom_frame_id", odom_frame_id);
+            n.getParam("scanner_frame_id", scanner_frame_id);
+            n.getParam("left_wheel_joint", left_wheel_joint);
+            n.getParam("right_wheel_joint", right_wheel_joint);
 
-    ros::Subscriber twist_sub = n.subscribe("/cmd_vel", frequency, twistCallback);
+            n.getParam("tube1_location", t1_loc);
+            n.getParam("tube2_location", t2_loc);
+            n.getParam("tube3_location", t3_loc);
+            n.getParam("tube4_location", t4_loc);
+            n.getParam("tube5_location", t5_loc);
+            n.getParam("tube6_location", t6_loc);
 
-    ros::Rate loop_rate(frequency);
+            n.getParam("tube_radius", tube_rad);
+            n.getParam("tube_var", tube_var);
+            n.getParam("world_frame_id", world_frame_id);
+            n.getParam("turtle_frame_id", turtle_frame_id);
+            n.getParam("twist_noise", twist_noise);
+            n.getParam("slip_min", slip_min);
+            n.getParam("slip_max", slip_max);
+            n.getParam("robot_radius", robot_rad);
 
-    tf2_ros::TransformBroadcaster broadcaster;
+            n.getParam("maximum_range", max_scan_range);
+            n.getParam("minimum_range", min_scan_range);
+            n.getParam("angle_increment", angle_incr);
+            n.getParam("sample_num", sample_num);
+            n.getParam("resolution", scan_res);
+            n.getParam("noise_level", scan_noise);
+            n.getParam("wall_width", wall_width);
+            n.getParam("wall_height", wall_height);
 
-    ros::Time current_time = ros::Time::now();
-    ros::Time last_time = ros::Time::now();
+            tube_locs.push_back(t1_loc);
+            tube_locs.push_back(t2_loc);
+            tube_locs.push_back(t3_loc);
+            tube_locs.push_back(t4_loc);
+            tube_locs.push_back(t5_loc);
+            tube_locs.push_back(t6_loc);
 
-    /***********
-     * Initialize joint states message
-     * ********/
-    DiffDrive ninjaTurtle = DiffDrive(wheelBase, wheelRad, 0.0, 0.0, 0.0, 0.0, 0.0);
-    
-    sensor_msgs::JointState joint_msg;
-
-    joint_msg.name.push_back(left_wheel_joint);
-    joint_msg.name.push_back(right_wheel_joint);
-
-    joint_msg.position.push_back(0.0);
-    joint_msg.position.push_back(0.0);
-    
-    joint_pub.publish(joint_msg);
-
-    while(ros::ok())
-    {
-        current_time = ros::Time::now();
-        ros::spinOnce();
-
-        /************
-         * Publish cylindrical markers (GROUND TRUTH)
-         * *********/
-        visualization_msgs::MarkerArray marker_array;
-
-        tf2::Quaternion marker_quat;
-        marker_quat.setRPY(0.0, 0.0, 0.0);
-        geometry_msgs::Quaternion markerQuat = tf2::toMsg(marker_quat);
-
-        for (int i = 0; i < tube_locs.size(); i++)
-        {
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = world_frame_id;
-            marker.header.stamp = current_time;
-            marker.ns = "real";
-            marker.id = i;
-            marker.type = visualization_msgs::Marker::CYLINDER;
-            marker.action = visualization_msgs::Marker::ADD;
-
-            marker.pose.position.x = tube_locs[i][0];
-            marker.pose.position.y = tube_locs[i][1];
-            marker.pose.position.z = 0.1;
-            marker.pose.orientation = markerQuat;
-            marker.scale.x = tubeRad*2;
-            marker.scale.y = tubeRad*2;
-            marker.scale.z = 0.2;
-            marker.color.a = 1.0;
-            marker.color.r = 195. / 255.;
-            marker.color.g = 205. / 255.;
-            marker.color.b = 230. / 255.;
-            marker.frame_locked = true;
-            marker_array.markers.push_back(marker);
+            return;
         }
 
-        // walls
-        visualization_msgs::Marker wall;
-        geometry_msgs::Point upLeft, upRight, loLeft, loRight;
+        void set_markers(void) {
+            std::cout << "setting ground truth markers!!" << std::endl;
+            visualization_msgs::MarkerArray marker_array;
 
-        upLeft.x = -wallWidth/2;
-        upLeft.y = wallHeight/2;
+            tf2::Quaternion marker_quat;
+            marker_quat.setRPY(0.0, 0.0, 0.0);
+            geometry_msgs::Quaternion markerQuat = tf2::toMsg(marker_quat);
 
-        upRight.x = wallWidth/2;
-        upRight.y = wallHeight/2;
+            ros::Time current_time = ros::Time::now();
 
-        loLeft.x = -wallWidth/2;
-        loLeft.y = -wallHeight/2;
-
-        loRight.x = wallWidth/2;
-        loRight.y = -wallHeight/2;
-
-        wall.header.frame_id = world_frame_id;
-        wall.header.stamp = current_time;
-        wall.ns = "real";
-        wall.type = 4;
-        wall.action = visualization_msgs::Marker::ADD;
-        wall.points.push_back(upLeft);
-        wall.points.push_back(upRight);
-        wall.points.push_back(loRight);
-        wall.points.push_back(loLeft);
-        wall.points.push_back(upLeft);
-        wall.scale.x = 0.01;
-        wall.color.a = 1;
-        wall.color.r = 250. / 255.;
-        wall.color.g = 192. / 255.;
-        wall.color.b = 221. / 255.;
-        
-        wall_pub.publish(wall);
-
-        // marker_array.markers.push_back(wall);
-
-        marker_true_pub.publish(marker_array);
-
-        // if twist message has been received
-        if (twist_received)
-        {
-            // Create the desired twist based on the message
-            Twist2D desiredTwist;
-            desiredTwist.dth = twist_msg.angular.z;
-            desiredTwist.dx = twist_msg.linear.x;
-            desiredTwist.dy = twist_msg.linear.y;
-
-            // Add Gaussian noise to the commanded twist
-            desiredTwist.dth += gaus_twist(get_random());
-            desiredTwist.dx += gaus_twist(get_random());
-
-            // Find wheel velocities required to achieve that twist
-            wheelVel wheelVelocities = ninjaTurtle.convertTwist(desiredTwist);
-
-            // Populate the sensor messages
-            joint_msg.header.stamp = current_time;
-            joint_msg.header.frame_id = turtle_frame_id;
-
-            joint_msg.position[0] += wheelVelocities.uL * (current_time - last_time).toSec();
-            joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
-
-            /***********
-             * Add wheel slip noise using slip model nu*omega where nu is uniform random noise between
-             * slipMin and slipMax
-             * ********/
-            joint_msg.position[0] += wheelVelocities.uL * slip_noise(get_random());
-            joint_msg.position[1] += wheelVelocities.uR * slip_noise(get_random());
-
-            /************
-             * Update configuration of diff-drive robot based on new wheel angles
-             * Publish joint_state message
-             * *********/
-            ninjaTurtle(joint_msg.position[0], joint_msg.position[1]);
-
-            joint_pub.publish(joint_msg);
-
-            /***********
-             * COLLISION DETECTION
-             * ********/
-            for (auto loc : tube_locs)
+            for (int i = 0; i < tube_locs.size(); i++)
             {
-                double distBetween = sqrt(pow(loc[0] - ninjaTurtle.getX(), 2) + pow(loc[1] - ninjaTurtle.getY(), 2));
-                if (distBetween <= (tubeRad + robotRad))
-                {
-                    double dx = loc[0] - ninjaTurtle.getX();
-                    double dy = loc[1] - ninjaTurtle.getY();
-                    double dmag = sqrt(pow(dx, 2) + pow(dy, 2));
+                visualization_msgs::Marker marker;
+                marker.header.frame_id = world_frame_id;
+                marker.header.stamp = current_time;
+                marker.ns = "real";
+                marker.id = i;
+                marker.type = visualization_msgs::Marker::CYLINDER;
+                marker.action = visualization_msgs::Marker::ADD;
 
-                    double move_x = dy / dmag;
-                    double move_y = - dx / dmag;
-                    
-                    // have the robot move along that tangent line
-                    // this is equivalent to the robot slipping
-                    ninjaTurtle.changeConfig(move_x / 50, move_y / 50);
-                }
+                marker.pose.position.x = tube_locs[i][0];
+                marker.pose.position.y = tube_locs[i][1];
+                marker.pose.position.z = 0.1;
+                marker.pose.orientation = markerQuat;
+                marker.scale.x = tube_rad*2;
+                marker.scale.y = tube_rad*2;
+                marker.scale.z = 0.2;
+                marker.color.a = 1.0;
+                marker.color.r = 195. / 255.;
+                marker.color.g = 205. / 255.;
+                marker.color.b = 230. / 255.;
+                marker.frame_locked = true;
+                marker_array.markers.push_back(marker);
             }
 
-            /***********
-             * Publish a transform between world frame and turtle frame to indicate location of robot
-             * ********/
-            tf2::Quaternion odom_quater;
-            odom_quater.setRPY(0, 0, ninjaTurtle.getTh());
+            marker_true_pub.publish(marker_array);
 
-            geometry_msgs::Quaternion odom_quat = tf2::toMsg(odom_quater);
+            visualization_msgs::Marker wall;
+            wall.id = 0;
+            geometry_msgs::Point up_left, up_right, low_left, low_right;
 
-            geometry_msgs::TransformStamped odom_trans;
-            odom_trans.header.stamp = current_time;
-            odom_trans.header.frame_id = world_frame_id;
-            odom_trans.child_frame_id = turtle_frame_id;
+            up_left.x = -wall_width/2;
+            up_left.y = wall_height/2;
+            
+            up_right.x = wall_width/2;
+            up_right.y = wall_height/2;
 
-            odom_trans.transform.translation.x = ninjaTurtle.getX();
-            odom_trans.transform.translation.y = ninjaTurtle.getY();
-            odom_trans.transform.translation.z = 0.0;
-            odom_trans.transform.rotation = odom_quat;
-        
-            broadcaster.sendTransform(odom_trans);
+            low_left.x = -wall_width/2;
+            low_left.y = -wall_height/2;
 
-            /***********
-             * FAKE_SENSOR markers
-             * Publish cylindrical markers relative to the location of the robot
-             * ********/
+            low_right.x = wall_width/2;
+            low_right.y = -wall_height/2;
+
+            std::vector<geometry_msgs::Point> wall_points{up_left, up_right, up_right, low_right, low_left, up_left};
+
+            wall.header.frame_id = world_frame_id;
+            wall.header.stamp = current_time;
+            wall.ns = "real";
+            wall.type = 4;
+
+            wall.action = visualization_msgs::Marker::ADD;
+            
+            for (auto w : wall_points)
+            {
+                wall.points.push_back(w);
+            }
+            wall.scale.x = 0.01;
+            wall.color.a = 1;
+            wall.color.r = 250. / 255.;
+            wall.color.g = 192. / 255.;
+            wall.color.b = 221. / 255.;
+            wall.frame_locked = true;
+
+            marker_array.markers.push_back(wall);
+
+            wall_pub.publish(wall);
+            return;
+        }
+
+        void set_rel_markers(void) {
+            std::cout << "displaying relative markers!!" << std::endl;
+            using namespace rigid2d;
 
             // find the transformation between the world frame and the turtle frame
-            Vector2D transRobot(ninjaTurtle.getX(), ninjaTurtle.getY());
-            Transform2D T_wt = Transform2D(transRobot, ninjaTurtle.getTh());
+            Vector2D trans_robot(ninja_turtle.getX(), ninja_turtle.getY());
+            Transform2D T_wt = Transform2D(trans_robot, ninja_turtle.getTh());
             Transform2D T_tw = T_wt.inv();
 
+            ros::Time current_time = ros::Time::now();
+
             visualization_msgs::MarkerArray marker_array_relative;
+
+            tf2::Quaternion marker_quat;
+            marker_quat.setRPY(0.0, 0.0, 0.0);
+            geometry_msgs::Quaternion markerQuat = tf2::toMsg(marker_quat);
 
             for (int i = 0; i < tube_locs.size(); i++)
             {
@@ -387,8 +266,8 @@ int main(int argc, char* argv[])
                 std::vector<double> loc = tube_locs[i];
 
                 // if the relative distance is out of range, then delete the marker from marker array
-                double rel_distance = sqrt(pow(loc[0] - ninjaTurtle.getX(), 2) + pow(loc[1] - ninjaTurtle.getY(), 2));
-                if (rel_distance > maxRange) {
+                double rel_distance = sqrt(pow(loc[0] - ninja_turtle.getX(), 2) + pow(loc[1] - ninja_turtle.getY(), 2));
+                if (rel_distance > max_range) {
                     marker_relative.action = visualization_msgs::Marker::DELETE;
                 }
                 // otherwise add it to the marker array
@@ -400,12 +279,12 @@ int main(int argc, char* argv[])
                 Vector2D tube_w(loc[0], loc[1]);
                 Vector2D tube_t = T_tw(tube_w);
 
-                marker_relative.pose.position.x = tube_t.x;
-                marker_relative.pose.position.y = tube_t.y;
+                marker_relative.pose.position.x = tube_t.x + tube_var;
+                marker_relative.pose.position.y = tube_t.y + tube_var;
                 marker_relative.pose.position.z = 0.1;
                 marker_relative.pose.orientation = markerQuat;
-                marker_relative.scale.x = tubeRad*2;
-                marker_relative.scale.y = tubeRad*2;
+                marker_relative.scale.x = tube_rad*2;
+                marker_relative.scale.y = tube_rad*2;
                 marker_relative.scale.z = 0.2;
                 marker_relative.color.a = 1.0;
                 marker_relative.color.r = 244. / 255.;
@@ -417,179 +296,227 @@ int main(int argc, char* argv[])
             }
 
             marker_rel_pub.publish(marker_array_relative);
-
-            /**************
-             * Publish a message to show the actual robot trajectory
-             * ***********/
-            geometry_msgs::PoseStamped poseStamp;
-            path.header.stamp = current_time;
-            path.header.frame_id = world_frame_id;
-            poseStamp.pose.position.x = ninjaTurtle.getX();
-            poseStamp.pose.position.y = ninjaTurtle.getY();
-            poseStamp.pose.orientation.z = ninjaTurtle.getTh();
-
-            path.poses.push_back(poseStamp);
-            path_pub.publish(path);
-            twist_received = false;
-
-            // /*************
-            //  * Publish simulated lidar scanner messages
-            //  * **********/
-            // std::vector<float> lidarRanges(360, maxRangeScan+1);
-            // std::fill(lidarRanges.begin(),lidarRanges.end(),maxRangeScan+1);
-
-            // for (auto marker : marker_array.markers)
-            // {
-            //     // angle of the tube relative to the world [-180, 180]
-            //     int tubeAngle = round(rad2deg(atan2(marker.pose.position.y, marker.pose.position.x)));
-
-            //     // shift the angle from [-180, 180] to [0, 359]
-            //     if (tubeAngle < 0)
-            //     {
-            //         tubeAngle += 360;
-            //     }
-
-            //     // find (x1, y1), location of the turtle relative to the tube
-            //     double x1 = ninjaTurtle.getX() - marker.pose.position.x;
-            //     double y1 = ninjaTurtle.getY() - marker.pose.position.y;
-
-            //     // look for points -20 and +20 degrees from the angle of the tube
-            //     for (int i = tubeAngle - 20; i < tubeAngle + 20; ++i)
-            //     {
-            //         // find (x2, y2), based on the angle of the lidar scanner
-            //         double x2 = x1 + maxRange * cos(deg2rad(i));
-            //         double y2 = y1 + maxRange * sin(deg2rad(i));
-                    
-            //         double dx = x2 - x1;
-            //         double dy = y2 - y1;
-            //         double dr = sqrt(pow(dx, 2) + pow(dy, 2));
-            //         double det = x1*y2 - x2*y1;
-            //         double dis = pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2);
-
-            //         double distance;
-            //         // find the points of intersection
-
-            //         if (fabs(dis) < 1e-5) // tangent
-            //         {
-            //             double intX = (det * dy) / pow(dr, 2);
-            //             double intY = -(det * dx) / pow(dr, 2);
-            //             distance = sqrt(pow(intX, 2) + pow(intY, 2));
-            //         } else if (fabs(dis) > 0)
-            //         {
-            //             double intX1 = (det * dy + (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-            //             double intY1 = (-det * dx + fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-            //             double dist1 = sqrt(pow(intX1 - x1, 2) + pow(intY1 - y1, 2));
-
-            //             double intX2 = (det * dy - (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-            //             double intY2 = (-det * dx - fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-            //             double dist2 = sqrt(pow(intX2 - x1, 2) + pow(intY2 - y1, 2));
-
-            //             if (dist1 < dist2)
-            //             {
-            //                 distance = dist1;
-            //             } else
-            //             {
-            //                 distance = dist2;
-            //             }
-            //         }
-
-            //         int index = i - int(rad2deg(ninjaTurtle.getTh()));
-            //         index = index % 360;
-            //         if (index < 0)
-            //         {
-            //             index += 360;
-            //         }
-
-            //         if (distance < lidarRanges[index])
-            //         {
-            //             lidarRanges[index] = distance;
-            //         }
-            //     }
-            // }
-
-            // /************
-            //  * Check for Walls!!!!!!!!
-            //  * *********/
-            // for (int a = 0; a < 360; ++a)
-            // {
-            //     geometry_msgs::Point point1, point2;
-
-            //     point1.x = ninjaTurtle.getX();
-            //     point1.y = ninjaTurtle.getY();
-
-            //     point2.x = point1.x + maxRange * cos(deg2rad(a));
-            //     point2.y = point1.y + maxRange * sin(deg2rad(a));
-
-            //     geometry_msgs::Point intercept;
-
-            //     int wallIndex = round(a - int(rad2deg(ninjaTurtle.getTh())));
-            //     wallIndex = wallIndex % 360;
-            //     if (wallIndex < 0)
-            //     {
-            //         wallIndex += 360;
-            //     } else if (wallIndex > 359)
-            //     {
-            //         wallIndex -= 360;
-            //     }
-
-            //     // check ground truth top line (upper left to upper right)
-            //     geometry_msgs::Point inter1 = LineToLine(point1, point2, wall.points[0], wall.points[1]);
-            //     double dist1 = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
-            //     if ((a < 180) && (dist1 < lidarRanges[wallIndex]))
-            //     {
-            //         lidarRanges[wallIndex] = dist1;
-            //     }
-            
-            //     // check ground truth right line (upper right to lower right)
-            //     geometry_msgs::Point inter2 = LineToLine(point1, point2, wall.points[1], wall.points[2]);
-            //     double dist2 = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
-            //     if (((a < 90) || (a > 270)) && (dist2 < lidarRanges[wallIndex]))
-            //     {
-            //         lidarRanges[wallIndex] = dist2;
-            //     }
-
-            //     // check ground truth bottom line (lower right to lower left)
-            //     geometry_msgs::Point inter3 = LineToLine(point1, point2, wall.points[2], wall.points[3]);
-            //     double dist3 = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
-            //     if ((a > 180) && (dist3 < lidarRanges[wallIndex]))
-            //     {
-            //         lidarRanges[wallIndex] = dist3;
-            //     }
-                
-            //     // check ground truth left line (lower left to upper left)
-            //     geometry_msgs::Point inter4 = LineToLine(point1, point2, wall.points[3], wall.points[4]);
-            //     double dist4 = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
-            //     if ((a > 90) && (a < 269) && (dist4 < lidarRanges[wallIndex]))
-            //     {
-            //         lidarRanges[wallIndex] = dist4;
-            //     }
-            // }
-
-            // sensor_msgs::LaserScan scan_msg;
-            // scan_msg.header.frame_id = turtle_frame_id;
-            // scan_msg.header.stamp = current_time;
-            // scan_msg.angle_min = 0;
-            // scan_msg.angle_max = 2*PI;
-            // scan_msg.angle_increment = PI / 180;
-            // scan_msg.range_min = minRangeScan;
-            // scan_msg.range_max = maxRangeScan;
-            // scan_msg.ranges = lidarRanges;
-            // scan_msg.intensities = std::vector<float> (360, 4000);
-            
-            // lidar_pub.publish(scan_msg);
-
+            return;
         }
 
-    last_time = current_time;
-    loop_rate.sleep();
-    }
+        void broadcast_world_to_turtle_tf(void) {
+            tf2::Quaternion quaternion;
+            quaternion.setRPY(0.0, 0.0, ninja_turtle.getTh());
 
+            geometry_msgs::Quaternion quat = tf2::toMsg(quaternion);
+
+            geometry_msgs::TransformStamped trans;
+            trans.header.stamp = ros::Time::now();
+            trans.header.frame_id = world_frame_id;
+            trans.child_frame_id = turtle_frame_id;
+
+            trans.transform.translation.x = ninja_turtle.getX();
+            trans.transform.translation.y = ninja_turtle.getY();
+            trans.transform.translation.z = 0.0;
+            trans.transform.rotation = quat;
+
+            broadcaster.sendTransform(trans);
+            return;
+        }
+        
+        void twistCallback(const geometry_msgs::Twist msg) {
+            twist_msg = msg;
+            twist_received = false;
+            return;
+        }
+
+        void check_collision(void) {
+            // check the distance betwen the center of the robot and the center of each tube
+            std::cout << "robot has collided with tube!!" << std::endl;
+            for (auto loc : tube_locs) {
+                double dx = loc[0] - ninja_turtle.getX();
+                double dy = loc[1] - ninja_turtle.getY();
+
+                double dist = sqrt(pow(dx,2) + pow(dy,2));
+
+                if (dist <= (tube_rad + robot_rad)) {
+                    double move_x = dy / dist;
+                    double move_y = -dx / dist;
+
+                    // have the robot move (slip) along the angent line
+                    ninja_turtle.changeConfig(move_x / 50, move_y / 50);
+                }
+            }
+            return;
+        }
+
+        void draw_trajectory(void) {
+            geometry_msgs::PoseStamped pose_stamped;
+            pose_stamped.pose.position.x = ninja_turtle.getX();
+            pose_stamped.pose.position.y = ninja_turtle.getY();
+            pose_stamped.pose.orientation.z = ninja_turtle.getTh();
+
+            path.header.stamp = ros::Time::now();
+            path.header.frame_id = world_frame_id;
+            path.poses.push_back(pose_stamped);
+            path_pub.publish(path);
+            return;
+        }
+
+        void simulate_lidar_scanner(void) {
+            using namespace rigid2d;
+            std::cout << "simulating lidar scanner!" << std::endl;
+
+            scan_msg.header.frame_id = turtle_frame_id;
+            scan_msg.header.stamp = ros::Time::now();
+            scan_msg.angle_min = 0.0;
+            scan_msg.angle_max = 2*PI;
+            scan_msg.angle_increment = 2*PI / sample_num;
+            scan_msg.range_min = min_scan_range;
+            scan_msg.range_max = max_scan_range;
+            
+            std::vector<float> lidar_ranges(sample_num, max_scan_range+1);
+
+            for (auto tube : tube_locs) {
+                double xt = tube[0];
+                double yt = tube[1];
+
+                // get the coordinates of the robot relative to the tube
+                double x1 = ninja_turtle.getX() - xt;
+                double y1 = ninja_turtle.getY() - yt;
+
+                std::cout << "x1: " << x1 << " y1: " << y1 << std::endl;
+
+                int tube_angle = round(rad2deg(atan2(yt-y1, xt-x1)));
+
+                for (int i = tube_angle - 27; i < tube_angle + 27; i++) {
+                    double x2 = x1 + max_scan_range * cos(deg2rad(i));
+                    double y2 = y1 + max_scan_range * sin(deg2rad(i));
+
+                    std::cout << "x2: " << x2 << " y2: " << y2 << std::endl;
+
+                    double dx = x2 - x1;
+                    double dy = y2 - y1;
+                    double dr = sqrt(pow(dx,2) + pow(dy,2));
+                    double det = x1*y2 - x2*y1;
+                    double dis = (pow(tube_rad,2) * pow(dr,2)) - pow(det,2);
+                    double distance;
+
+                    if (fabs(dis) < 1e-5) {
+                        double inter_x = (det * dy) / pow(dr,2);
+                        double inter_y = -(det * dx) / pow(dr,2);
+                        distance = sqrt(pow(inter_x,2) + pow(inter_y,2));
+                    }
+                    else if (dis > 0) {
+                        double inter_x1 = ((det*dy) + ((dy/fabs(dy))*dx*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))))/pow(dr,2);
+                        double inter_y1 = (-(det*dx) + fabs(dy)*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))) / pow(dr,2);
+                        double dist1 = sqrt(pow(inter_x1,2) + pow(inter_y1,2));
+
+                        double inter_x2 = ((det*dy) - ((dy/fabs(dy))*dx*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))))/pow(dr,2);
+                        double inter_y2 = (-(det*dx) - fabs(dy)*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))) / pow(dr,2);
+                        double dist2 = sqrt(pow(inter_x2,2) + pow(inter_y2,2));
+
+                        distance = std::min(dist1, dist2);
+                    }
+                    else {
+                        distance = max_scan_range + 1;
+                    }
+
+                    int ind = (i - int(rad2deg(ninja_turtle.getTh()))) % 360;
+                    if (ind < 0) ind += 360;
+
+                    if (distance < lidar_ranges[ind]) {
+                        std::cout << "angle " << ind << " distance " << distance << std::endl;
+                        lidar_ranges[ind] = distance;
+                    }
+                }
+            }
+            scan_msg.ranges = lidar_ranges;
+            scan_msg.intensities = std::vector<float> (360, 4000);
+
+            lidar_pub.publish(scan_msg);
+
+        }
+        
+        void main_loop() {
+            using namespace rigid2d;
+            load_parameters();
+
+            ros::Rate loop_rate(frequency);
+            ros::Time current_time = ros::Time::now();
+            ros::Time last_time = ros::Time::now();
+
+            double slip_mean = (slip_min + slip_max) / 2;
+            double slip_var = slip_max - slip_mean;
+
+            std::normal_distribution<> slip_noise(slip_mean, slip_var);
+
+            std::normal_distribution<> gaus_twist(0, twist_noise);
+
+            ninja_turtle = rigid2d::DiffDrive(wheel_base, wheel_rad, 0.0,
+                                                                     0.0, 
+                                                                     0.0, 
+                                                                     0.0, 
+                                                                     0.0);
+
+            joint_msg.header.stamp = current_time;
+            joint_msg.header.frame_id = turtle_frame_id;
+            joint_msg.name.push_back(left_wheel_joint);
+            joint_msg.name.push_back(right_wheel_joint);
+
+            joint_msg.position.push_back(0.0);
+            joint_msg.position.push_back(0.0);
+
+            joint_pub.publish(joint_msg);
+
+            set_markers();
+
+            while (ros::ok()) {
+
+                current_time = ros::Time::now();
+
+                broadcast_world_to_turtle_tf();
+
+                if (twist_received) {
+                    // create desired twist based on the message, add gaussian noise
+                    Twist2D desired_twist;
+                    desired_twist.dth = twist_msg.angular.z + gaus_twist(get_random());
+                    desired_twist.dx = twist_msg.linear.x + gaus_twist(get_random());
+                    desired_twist.dy = twist_msg.linear.y;
+
+                    check_collision();
+                    
+                    // find the wheel velocities required to achieve that twist
+                    wheelVel wheel_vel = ninja_turtle.convertTwist(desired_twist);
+
+                    // populate the sensor messages, add wheel slip noise
+                    joint_msg.header.stamp = current_time;
+                    joint_msg.header.frame_id = turtle_frame_id;
+
+                    joint_msg.position[0] += wheel_vel.uL * (current_time - last_time).toSec() + (wheel_vel.uL * slip_noise(get_random()));
+                    joint_msg.position[1] += wheel_vel.uR * (current_time - last_time).toSec() + (wheel_vel.uR * slip_noise(get_random()));
+
+                    joint_pub.publish(joint_msg);
+
+                    // update the configuration of the diff-drive robot based on new wheel angles
+                    ninja_turtle(joint_msg.position[0], joint_msg.position[1]);
+
+                    broadcast_world_to_turtle_tf();
+                    
+                    set_rel_markers();
+
+                    draw_trajectory();
+
+                    simulate_lidar_scanner();
+
+                    twist_received = false;
+                }
+
+                last_time = current_time;
+                loop_rate.sleep();
+            }
+        }
+};
+
+int main(int argc, char *argv[]) {
+    ros::init(argc, argv, "tube_world");
+    TubeWorld node;
+    node.main_loop();
+    ros::spin();
     return 0;
-}
-
-void twistCallback(const geometry_msgs::Twist msg)
-{
-    twist_msg = msg;
-    twist_received = true;
-    return;
 }
