@@ -1,5 +1,5 @@
 # Shermbot Navigation Project Winter 2021
-Maintained by Sarah Ziselman for ME 495 Sensing, Navigating, & Machine Learning for Robotics. `Shermbot Navigation` (named after my dog, Sherman) covers a broad range of areas in robotic software development using the TurtleBot3 burger robot including writing C++ libraries, unit testing, building a simulator, landmark detection, perception, and Extended Kalman Filter SLAM.
+Maintained by Sarah Ziselman for ME 495 Sensing, Navigating, & Machine Learning for Robotics. `Shermbot Navigation` (named after my dog, Sherman) covers a broad range of areas in robotic software development including writing C++ libraries, unit testing, building a simulator, landmark detection, perception, and Extended Kalman Filter SLAM. This project focuses on using the TurtleBot3 burger, a differential drive robot built and developed by ROBOTIS.
 
 # Package List
 This repository consists of the following ROS packages:
