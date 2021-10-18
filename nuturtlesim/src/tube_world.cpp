@@ -432,151 +432,151 @@ int main(int argc, char* argv[])
             path_pub.publish(path);
             twist_received = false;
 
-            /*************
-             * Publish simulated lidar scanner messages
-             * **********/
-            std::vector<float> lidarRanges(360, maxRangeScan+1);
-            std::fill(lidarRanges.begin(),lidarRanges.end(),maxRangeScan+1);
+            // /*************
+            //  * Publish simulated lidar scanner messages
+            //  * **********/
+            // std::vector<float> lidarRanges(360, maxRangeScan+1);
+            // std::fill(lidarRanges.begin(),lidarRanges.end(),maxRangeScan+1);
 
-            for (auto marker : marker_array.markers)
-            {
-                // angle of the tube relative to the world [-180, 180]
-                int tubeAngle = round(rad2deg(atan2(marker.pose.position.y, marker.pose.position.x)));
+            // for (auto marker : marker_array.markers)
+            // {
+            //     // angle of the tube relative to the world [-180, 180]
+            //     int tubeAngle = round(rad2deg(atan2(marker.pose.position.y, marker.pose.position.x)));
 
-                // shift the angle from [-180, 180] to [0, 359]
-                if (tubeAngle < 0)
-                {
-                    tubeAngle += 360;
-                }
+            //     // shift the angle from [-180, 180] to [0, 359]
+            //     if (tubeAngle < 0)
+            //     {
+            //         tubeAngle += 360;
+            //     }
 
-                // find (x1, y1), location of the turtle relative to the tube
-                double x1 = ninjaTurtle.getX() - marker.pose.position.x;
-                double y1 = ninjaTurtle.getY() - marker.pose.position.y;
+            //     // find (x1, y1), location of the turtle relative to the tube
+            //     double x1 = ninjaTurtle.getX() - marker.pose.position.x;
+            //     double y1 = ninjaTurtle.getY() - marker.pose.position.y;
 
-                // look for points -20 and +20 degrees from the angle of the tube
-                for (int i = tubeAngle - 20; i < tubeAngle + 20; ++i)
-                {
-                    // find (x2, y2), based on the angle of the lidar scanner
-                    double x2 = x1 + maxRange * cos(deg2rad(i));
-                    double y2 = y1 + maxRange * sin(deg2rad(i));
+            //     // look for points -20 and +20 degrees from the angle of the tube
+            //     for (int i = tubeAngle - 20; i < tubeAngle + 20; ++i)
+            //     {
+            //         // find (x2, y2), based on the angle of the lidar scanner
+            //         double x2 = x1 + maxRange * cos(deg2rad(i));
+            //         double y2 = y1 + maxRange * sin(deg2rad(i));
                     
-                    double dx = x2 - x1;
-                    double dy = y2 - y1;
-                    double dr = sqrt(pow(dx, 2) + pow(dy, 2));
-                    double det = x1*y2 - x2*y1;
-                    double dis = pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2);
+            //         double dx = x2 - x1;
+            //         double dy = y2 - y1;
+            //         double dr = sqrt(pow(dx, 2) + pow(dy, 2));
+            //         double det = x1*y2 - x2*y1;
+            //         double dis = pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2);
 
-                    double distance;
-                    // find the points of intersection
+            //         double distance;
+            //         // find the points of intersection
 
-                    if (fabs(dis) < 1e-5) // tangent
-                    {
-                        double intX = (det * dy) / pow(dr, 2);
-                        double intY = -(det * dx) / pow(dr, 2);
-                        distance = sqrt(pow(intX, 2) + pow(intY, 2));
-                    } else if (fabs(dis) > 0)
-                    {
-                        double intX1 = (det * dy + (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-                        double intY1 = (-det * dx + fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-                        double dist1 = sqrt(pow(intX1 - x1, 2) + pow(intY1 - y1, 2));
+            //         if (fabs(dis) < 1e-5) // tangent
+            //         {
+            //             double intX = (det * dy) / pow(dr, 2);
+            //             double intY = -(det * dx) / pow(dr, 2);
+            //             distance = sqrt(pow(intX, 2) + pow(intY, 2));
+            //         } else if (fabs(dis) > 0)
+            //         {
+            //             double intX1 = (det * dy + (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+            //             double intY1 = (-det * dx + fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+            //             double dist1 = sqrt(pow(intX1 - x1, 2) + pow(intY1 - y1, 2));
 
-                        double intX2 = (det * dy - (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-                        double intY2 = (-det * dx - fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
-                        double dist2 = sqrt(pow(intX2 - x1, 2) + pow(intY2 - y1, 2));
+            //             double intX2 = (det * dy - (dy / fabs(dy)) * dx * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+            //             double intY2 = (-det * dx - fabs(dy) * sqrt(pow(tubeRad, 2) * pow(dr, 2) - pow(det, 2))) / pow(dr, 2);
+            //             double dist2 = sqrt(pow(intX2 - x1, 2) + pow(intY2 - y1, 2));
 
-                        if (dist1 < dist2)
-                        {
-                            distance = dist1;
-                        } else
-                        {
-                            distance = dist2;
-                        }
-                    }
+            //             if (dist1 < dist2)
+            //             {
+            //                 distance = dist1;
+            //             } else
+            //             {
+            //                 distance = dist2;
+            //             }
+            //         }
 
-                    int index = i - int(rad2deg(ninjaTurtle.getTh()));
-                    index = index % 360;
-                    if (index < 0)
-                    {
-                        index += 360;
-                    }
+            //         int index = i - int(rad2deg(ninjaTurtle.getTh()));
+            //         index = index % 360;
+            //         if (index < 0)
+            //         {
+            //             index += 360;
+            //         }
 
-                    if (distance < lidarRanges[index])
-                    {
-                        lidarRanges[index] = distance;
-                    }
-                }
-            }
+            //         if (distance < lidarRanges[index])
+            //         {
+            //             lidarRanges[index] = distance;
+            //         }
+            //     }
+            // }
 
-            /************
-             * Check for Walls!!!!!!!!
-             * *********/
-            for (int a = 0; a < 360; ++a)
-            {
-                geometry_msgs::Point point1, point2;
+            // /************
+            //  * Check for Walls!!!!!!!!
+            //  * *********/
+            // for (int a = 0; a < 360; ++a)
+            // {
+            //     geometry_msgs::Point point1, point2;
 
-                point1.x = ninjaTurtle.getX();
-                point1.y = ninjaTurtle.getY();
+            //     point1.x = ninjaTurtle.getX();
+            //     point1.y = ninjaTurtle.getY();
 
-                point2.x = point1.x + maxRange * cos(deg2rad(a));
-                point2.y = point1.y + maxRange * sin(deg2rad(a));
+            //     point2.x = point1.x + maxRange * cos(deg2rad(a));
+            //     point2.y = point1.y + maxRange * sin(deg2rad(a));
 
-                geometry_msgs::Point intercept;
+            //     geometry_msgs::Point intercept;
 
-                int wallIndex = round(a - int(rad2deg(ninjaTurtle.getTh())));
-                wallIndex = wallIndex % 360;
-                if (wallIndex < 0)
-                {
-                    wallIndex += 360;
-                } else if (wallIndex > 359)
-                {
-                    wallIndex -= 360;
-                }
+            //     int wallIndex = round(a - int(rad2deg(ninjaTurtle.getTh())));
+            //     wallIndex = wallIndex % 360;
+            //     if (wallIndex < 0)
+            //     {
+            //         wallIndex += 360;
+            //     } else if (wallIndex > 359)
+            //     {
+            //         wallIndex -= 360;
+            //     }
 
-                // check ground truth top line (upper left to upper right)
-                geometry_msgs::Point inter1 = LineToLine(point1, point2, wall.points[0], wall.points[1]);
-                double dist1 = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
-                if ((a < 180) && (dist1 < lidarRanges[wallIndex]))
-                {
-                    lidarRanges[wallIndex] = dist1;
-                }
+            //     // check ground truth top line (upper left to upper right)
+            //     geometry_msgs::Point inter1 = LineToLine(point1, point2, wall.points[0], wall.points[1]);
+            //     double dist1 = sqrt(pow(inter1.x - point1.x, 2) + pow(inter1.y - point1.y, 2));
+            //     if ((a < 180) && (dist1 < lidarRanges[wallIndex]))
+            //     {
+            //         lidarRanges[wallIndex] = dist1;
+            //     }
             
-                // check ground truth right line (upper right to lower right)
-                geometry_msgs::Point inter2 = LineToLine(point1, point2, wall.points[1], wall.points[2]);
-                double dist2 = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
-                if (((a < 90) || (a > 270)) && (dist2 < lidarRanges[wallIndex]))
-                {
-                    lidarRanges[wallIndex] = dist2;
-                }
+            //     // check ground truth right line (upper right to lower right)
+            //     geometry_msgs::Point inter2 = LineToLine(point1, point2, wall.points[1], wall.points[2]);
+            //     double dist2 = sqrt(pow(inter2.x - point1.x, 2) + pow(inter2.y - point1.y, 2));
+            //     if (((a < 90) || (a > 270)) && (dist2 < lidarRanges[wallIndex]))
+            //     {
+            //         lidarRanges[wallIndex] = dist2;
+            //     }
 
-                // check ground truth bottom line (lower right to lower left)
-                geometry_msgs::Point inter3 = LineToLine(point1, point2, wall.points[2], wall.points[3]);
-                double dist3 = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
-                if ((a > 180) && (dist3 < lidarRanges[wallIndex]))
-                {
-                    lidarRanges[wallIndex] = dist3;
-                }
+            //     // check ground truth bottom line (lower right to lower left)
+            //     geometry_msgs::Point inter3 = LineToLine(point1, point2, wall.points[2], wall.points[3]);
+            //     double dist3 = sqrt(pow(inter3.x - point1.x, 2) + pow(inter3.y - point1.y, 2));
+            //     if ((a > 180) && (dist3 < lidarRanges[wallIndex]))
+            //     {
+            //         lidarRanges[wallIndex] = dist3;
+            //     }
                 
-                // check ground truth left line (lower left to upper left)
-                geometry_msgs::Point inter4 = LineToLine(point1, point2, wall.points[3], wall.points[4]);
-                double dist4 = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
-                if ((a > 90) && (a < 269) && (dist4 < lidarRanges[wallIndex]))
-                {
-                    lidarRanges[wallIndex] = dist4;
-                }
-            }
+            //     // check ground truth left line (lower left to upper left)
+            //     geometry_msgs::Point inter4 = LineToLine(point1, point2, wall.points[3], wall.points[4]);
+            //     double dist4 = sqrt(pow(inter4.x - point1.x, 2) + pow(inter4.y - point1.y, 2));
+            //     if ((a > 90) && (a < 269) && (dist4 < lidarRanges[wallIndex]))
+            //     {
+            //         lidarRanges[wallIndex] = dist4;
+            //     }
+            // }
 
-            sensor_msgs::LaserScan scan_msg;
-            scan_msg.header.frame_id = turtle_frame_id;
-            scan_msg.header.stamp = current_time;
-            scan_msg.angle_min = 0;
-            scan_msg.angle_max = 2*PI;
-            scan_msg.angle_increment = PI / 180;
-            scan_msg.range_min = minRangeScan;
-            scan_msg.range_max = maxRangeScan;
-            scan_msg.ranges = lidarRanges;
-            scan_msg.intensities = std::vector<float> (360, 4000);
+            // sensor_msgs::LaserScan scan_msg;
+            // scan_msg.header.frame_id = turtle_frame_id;
+            // scan_msg.header.stamp = current_time;
+            // scan_msg.angle_min = 0;
+            // scan_msg.angle_max = 2*PI;
+            // scan_msg.angle_increment = PI / 180;
+            // scan_msg.range_min = minRangeScan;
+            // scan_msg.range_max = maxRangeScan;
+            // scan_msg.ranges = lidarRanges;
+            // scan_msg.intensities = std::vector<float> (360, 4000);
             
-            lidar_pub.publish(scan_msg);
+            // lidar_pub.publish(scan_msg);
 
         }
 
