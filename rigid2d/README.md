@@ -1,7 +1,7 @@
 # Rigid2D
 This package contains two libraries: 1) `rigid2D` and 2) `diff_drive`.
 
-## rigid2D
+## rigid2D library
 ### Overview
 This library handles transformations in SE(2). This library contains the following:
 * `Vector2D` - a struct that contains an `x` and `y` component. Functionalities include normalizing, getting the magnitude and angle, and basic operators.
@@ -22,4 +22,4 @@ Running the following executable,
 ```
 implement unit tests using the `catchw` framework. It will display the number of tests ran and tests passed.
 
-## diff_drive
+## diff_drive library
