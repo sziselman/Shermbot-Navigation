@@ -1,10 +1,16 @@
 <launch>
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+
     <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
-    <rosparam command="load" file="$(find rigid2d)/config/frame_id_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/frame_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/tube_world_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/scan_params.yaml"/>
+
+    <node name="tube_world" pkg="nuturtlesim" type="tube_world" output="screen" />
     <node name="turtlebot3_teleop_keyboard" pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" output="screen"/>
     <node name="odometer" pkg="rigid2d" type="odometer" output="screen" />
     <node name="fake_turtle" pkg="rigid2d" type="fake_turtle"/>
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-    <node name="rviz" pkg="rviz" args="-d $(find rigid2d)/config/turtle_model.rviz -f odom" type="rviz"/>
+
+    <node name="rviz" pkg="rviz" args="-d $(find nuturtlesim)/config/model.rviz -f world" type="rviz"/>
 </launch>
