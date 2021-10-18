@@ -1,0 +1,19 @@
+<launch>
+    <arg name="simulate" default="true" doc="if true (launches simulator on rviz) if false (launches landmark detection on turtlebot)"/>
+
+    <group if="$(arg simulate)">
+        <node pkg="nuslam" name="landmarks" type="landmarks" output="screen"/>
+        <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
+        <node pkg="nuturtlesim" type="tube_world" name="tube_world" output="screen" />
+        <node name="rviz" pkg="rviz" args="-d $(find nuslam)/config/model.rviz -f world" type="rviz"/>
+    </group>
+
+    <group unless="$(arg simulate)">
+    </group>
+
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/> 
+    <rosparam command="load" file="$(find nuturtlesim)/config/frame_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/tube_world_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/scan_params.yaml"/>
+    <rosparam command="load" file="$(find nuslam)/config/slam_params.yaml"/>
+</launch>

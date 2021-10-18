@@ -13,7 +13,7 @@ The node also maintains the positions of the obstacles relative to the turtlebot
 
 ![rel_tubes](img/rel_tubes.gif)
 
-The node models the turtlebot and the obstacles as having a circle footprint. If these footprints collide with each other (meaning that the robot collides with an obstacle), then the turtlebot slips in the direction of the line tangent between the robot and the obstacle as seen below,
+The node models the turtlebot and the obstacles as having a circle footprint. If these footprints collide with each other (meaning that the robot collides with an obstacle), then the turtlebot slips (with odometry updated) in the direction of the line tangent between the robot and the obstacle as seen below,
 
 ![collision](img/collision.gif)
 
