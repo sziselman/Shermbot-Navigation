@@ -1,16 +1,16 @@
 <launch>
     <arg name="use_rviz" default="true" doc="Controls whether rviz is launched-- default true"/>
-    
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
     <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
 
-    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
-    </node>
-    
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-    </node>
+    <!-- <group if="$(eval arg('use_rviz') == 'true')">
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+        <node name="rviz" pkg="rviz" type="rviz" args="-d '$(find nuturtle_description)/config/model.rviz'"/>
+    </group> -->
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d '$(find nuturtle_description)/config/model.rviz'"/>
-
-    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d '$(find nuturtle_description)/config/turtle_model.rviz'"/>
 
 </launch>

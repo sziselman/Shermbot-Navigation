@@ -1,4 +1,0 @@
-<launch>
-    <node pkg="nuturtle_robot" type="turtle_interface" name="turtle_interface" output="screen"/>
-    <test test-name="turtle_interface_test" pkg="nuturtle_robot" type="turtle_interface_test" time-limit="5.0"/>
-</launch>
