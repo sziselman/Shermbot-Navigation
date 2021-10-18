@@ -23,3 +23,6 @@ Running the following executable,
 implement unit tests using the `catchw` framework. It will display the number of tests ran and tests passed.
 
 ## diff_drive library
+This library models the kinematics of a differential drive robot with a given wheel base and wheel radius. This allows the mathematical calculations to be handled without tying in to a speific robot or control scheme. This library contains the following:
+* `wheelVel` - a struct that contains the left and right wheel velocities.
+* `DiffDrive` - a class that contains the (x,y,th) configuration of the differential drive robot, the distance between the wheels, the radius of the wheels, and the angle of the left and right wheels. Functionalities include converting a `Twist2D` to the corresponding `wheelVel`, getting a `Twist2D` from updated angles of the left and right wheels, updating the configuration of the robot given updated wheel angles, and changing the configuration of the robot to a different (x,y) location.
