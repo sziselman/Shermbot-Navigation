@@ -55,7 +55,6 @@ int main(int argc, char* argv[])
     std::string odom_frame_id, body_frame_id, left_wheel_joint, right_wheel_joint;
 
     sensor_msgs::JointState joint_msg;
-    // geometry_msgs::Twist twist_msg;
 
     wheelVel wheelVelocities;
 
@@ -118,15 +117,9 @@ int main(int argc, char* argv[])
         joint_msg.header.stamp = current_time;
         joint_msg.header.frame_id = odom_frame_id;
 
-        // joint_msg.position[0] += wheelVelocities.uL;
-        // joint_msg.position[1] += wheelVelocities.uR;
-
         joint_msg.position[0] += wheelVelocities.uL * (current_time - last_time).toSec();
         joint_msg.position[1] += wheelVelocities.uR * (current_time - last_time).toSec();
-
-        // joint_msg.position[0] = normalize_angle(joint_msg.position[0]);
-        // joint_msg.position[1] = normalize_angle(joint_msg.position[1]);
-
+        
         fakeTurtle(joint_msg.position[0], joint_msg.position[1]);    // update the configuration of the diff drive based on new wheel angles
         
         pub.publish(joint_msg);

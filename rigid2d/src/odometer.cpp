@@ -39,8 +39,6 @@ static ros::Publisher odom_pub;
 static ros::ServiceServer setPose_service;
 static ros::ServiceClient setPose_client;
 
-// static tf::TransformBroadcaster odom_broadcaster;
-
 static double wheelBase, wheelRad;
 static int frequency = 100;
 
@@ -121,7 +119,6 @@ void jointStateCallback(const sensor_msgs::JointState msg)
     /***********************
     * Create a quaternion from yaw
     ***********************/
-    // geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_diffdrive.getTh());
     tf2::Quaternion odom_quater;
     odom_quater.setRPY(0, 0, odom_diffdrive.getTh());
 
@@ -160,7 +157,7 @@ void jointStateCallback(const sensor_msgs::JointState msg)
 
     odom_pub.publish(odom_msg);
 
-    return ;
+    return;
 }
 
 /// \brief setPose function for set_pose service
