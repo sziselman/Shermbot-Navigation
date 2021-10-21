@@ -86,6 +86,19 @@ class TubeWorld {
         std::vector<double> t1_loc, t2_loc, t3_loc, t4_loc, t5_loc, t6_loc;
         std::vector<std::vector<double>> tube_locs;
 
+        // ros objects (node handle, subs, pubs, services, etc)
+        ros::NodeHandle n;
+
+        ros::Publisher marker_true_pub;
+        ros::Publisher marker_rel_pub;
+        ros::Publisher wall_pub;
+        ros::Publisher joint_pub;
+        ros::Publisher path_pub;
+        ros::Publisher lidar_pub;
+
+        ros::Subscriber twist_sub;
+        tf2_ros::TransformBroadcaster broadcaster;
+
         // variables
         geometry_msgs::Twist twist_msg;
         bool twist_received = false;
@@ -98,18 +111,17 @@ class TubeWorld {
 
     public:
 
-        // ros objects (node handle, subs, pubs, services, etc)
-        ros::NodeHandle n;
+        TubeWorld() {
+            load_parameters();
 
-        ros::Publisher marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", 10, latch);
-        ros::Publisher marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10);
-        ros::Publisher wall_pub = n.advertise<visualization_msgs::Marker>("/wall", 10, latch);
-        ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", 10);
-        ros::Publisher path_pub = n.advertise<nav_msgs::Path>("/real_path", 10);
-        ros::Publisher lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", 10);
-
-        ros::Subscriber twist_sub = n.subscribe("/cmd_vel", 10, &TubeWorld::twistCallback, this);
-        tf2_ros::TransformBroadcaster broadcaster;
+            marker_true_pub = n.advertise<visualization_msgs::MarkerArray>("/ground_truth", 10, latch);
+            marker_rel_pub = n.advertise<visualization_msgs::MarkerArray>("/fake_sensor", 10);
+            wall_pub = n.advertise<visualization_msgs::Marker>("/wall", 10, latch);
+            joint_pub = n.advertise<sensor_msgs::JointState>("/joint_states", 10);
+            path_pub = n.advertise<nav_msgs::Path>("/real_path", 10);
+            lidar_pub = n.advertise<sensor_msgs::LaserScan>("/scan", 10);
+            twist_sub = n.subscribe("/cmd_vel", 100, &TubeWorld::twist_callback, this);
+        }
 
         void load_parameters() {
             /***********
@@ -238,7 +250,7 @@ class TubeWorld {
         }
 
         void set_rel_markers(void) {
-            std::cout << "displaying relative markers!!" << std::endl;
+            std::cout << "setting relative markers!!" << std::endl;
             using namespace rigid2d;
 
             // find the transformation between the world frame and the turtle frame
@@ -319,9 +331,10 @@ class TubeWorld {
             return;
         }
         
-        void twistCallback(const geometry_msgs::Twist msg) {
+        void twist_callback(const geometry_msgs::Twist& msg) {
+            // std::cout << "twist received!" << std::endl;
             twist_msg = msg;
-            twist_received = false;
+            twist_received = true;
             return;
         }
 
@@ -435,7 +448,6 @@ class TubeWorld {
         
         void main_loop() {
             using namespace rigid2d;
-            load_parameters();
 
             ros::Rate loop_rate(frequency);
             ros::Time current_time = ros::Time::now();
@@ -471,8 +483,13 @@ class TubeWorld {
                 current_time = ros::Time::now();
 
                 broadcast_world_to_turtle_tf();
-
+                
                 if (twist_received) {
+
+                    // std::cout << "twist message received :)" << std::endl;
+                    
+                    // broadcast_world_to_turtle_tf();
+
                     // create desired twist based on the message, add gaussian noise
                     Twist2D desired_twist;
                     desired_twist.dth = twist_msg.angular.z + gaus_twist(get_random());
@@ -508,6 +525,7 @@ class TubeWorld {
                 }
 
                 last_time = current_time;
+                ros::spinOnce();
                 loop_rate.sleep();
             }
         }
@@ -517,6 +535,6 @@ int main(int argc, char *argv[]) {
     ros::init(argc, argv, "tube_world");
     TubeWorld node;
     node.main_loop();
-    ros::spin();
+    // ros::spin();
     return 0;
 }
