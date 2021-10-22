@@ -10,36 +10,30 @@ TEST_CASE("circle fit test 1", "[circle fit test 1]")
 {
     using namespace arma;
     using namespace circle_fit;
-
-    std::vector<geometry_msgs::Point> data;
     
     geometry_msgs::Point p1, p2, p3, p4, p5, p6;
 
     p1.x = 1;
     p1.y = 7;
-    data.push_back(p1);
 
     p2.x = 2;
     p2.y = 6;
-    data.push_back(p2);
 
     p3.x = 5;
     p3.y = 8;
-    data.push_back(p3);
 
     p4.x = 7;
     p4.y = 7;
-    data.push_back(p4);
 
     p5.x = 9;
     p5.y = 5;
-    data.push_back(p5);
 
     p6.x = 3;
     p6.y = 7;
-    data.push_back(p6);
 
-    visualization_msgs::Marker marker = CircleFit(data);
+    std::vector<geometry_msgs::Point> data{p1, p2, p3, p4, p5, p6};
+
+    visualization_msgs::Marker marker = circleFit(data);
 
     REQUIRE(marker.pose.position.x == Approx(4.615482));
     REQUIRE(marker.pose.position.y == Approx(2.807354));
@@ -52,27 +46,23 @@ TEST_CASE("circle fit test 2", "[circle fit test 2]")
     using namespace arma;
     using namespace circle_fit;
 
-    std::vector<geometry_msgs::Point> data;
-
     geometry_msgs::Point p1, p2, p3, p4;
 
     p1.x = -1;
     p1.y = 0;
-    data.push_back(p1);
 
     p2.x = -0.3;
     p2.y = -0.06;
-    data.push_back(p2);
 
     p3.x = 0.3;
     p3.y = 0.1;
-    data.push_back(p3);
 
     p4.x = 1;
     p4.y = 0;
-    data.push_back(p4);
 
-    visualization_msgs::Marker marker = CircleFit(data);
+    std::vector<geometry_msgs::Point> data{p1, p2, p3, p4};
+
+    visualization_msgs::Marker marker = circleFit(data);
 
     REQUIRE(marker.pose.position.x == Approx(0.4908357));
     REQUIRE(marker.pose.position.y == Approx(-22.15212));

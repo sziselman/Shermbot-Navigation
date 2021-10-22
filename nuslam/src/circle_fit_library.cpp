@@ -9,7 +9,7 @@ namespace circle_fit
 {
     using namespace arma;
 
-    visualization_msgs::Marker CircleFit(std::vector<geometry_msgs::Point> data)
+    visualization_msgs::Marker circleFit(std::vector<geometry_msgs::Point> data)
     {
         // compute the (x,y) coordinates of the centroid
 
@@ -122,71 +122,63 @@ namespace circle_fit
         return marker;
     }
     
-    std::vector<std::vector<geometry_msgs::Point>> ClusterPoints(std::vector<float> ranges, double minRange, double maxRange)
+    std::vector<std::vector<geometry_msgs::Point>> clusterPoints(std::vector<float> ranges, double minRange, double maxRange)
     {
         using namespace rigid2d;
         std::vector<std::vector<geometry_msgs::Point>> clusters;
 
-        int angle = 0;
-        double threshold = 0.07;
+        int curr_angle = 0;
+        double threshold = 0.04;
 
-        std::vector<geometry_msgs::Point> currCluster;
+        std::vector<geometry_msgs::Point> current_cluster;
 
-        while (angle < 360)
+        while (curr_angle < 360)
         {
             // if the point is out of range, then ignore it
-            if ((ranges[angle] > maxRange) | (ranges[angle] < minRange))
+            if ((ranges[curr_angle] > maxRange) || (ranges[curr_angle] < minRange))
             {
-                angle += 1;
+                curr_angle += 1;
                 continue;
             }
 
             // use small angle approximation to approximate the distance between the current point and the next point
-            int currAngle = angle;
-            int nextAngle = angle + 1;
+            int next_angle = (curr_angle + 1) % 360;
 
-            if (nextAngle == 360)
-            {
-                nextAngle = 0;
-            }
-
-            double currDist = ranges[currAngle];
-            double nextDist = ranges[nextAngle];
+            double curr_dist = ranges[curr_angle];
+            double next_dist = ranges[next_angle];
 
             geometry_msgs::Point point;
-            point.x = ranges[currAngle] * cos(deg2rad(currAngle));
-            point.y = ranges[currAngle] * sin(deg2rad(currAngle));
+            point.x = ranges[curr_angle] * cos(deg2rad(curr_angle));
+            point.y = ranges[curr_angle] * sin(deg2rad(curr_angle));
 
             // if the distance between the two points is less than the threshold
-            if (fabs(currDist - nextDist) < threshold)
+            if (fabs(curr_dist - next_dist) < threshold)
             {
-                // // add point to the cluster and move to the next point
-                // currCluster.push_back(point);
-                // angle += 1;
-
                 // if at current is 359 and next is 0
-                if (nextAngle < angle)
+                // takes care of wrap-around
+                if (next_angle < curr_angle)
                 {
+                    // add the point to the first cluster found
                     clusters[0].push_back(point);
-                } else // all other scenarios
+                } else
                 {
-                    currCluster.push_back(point);
-                    angle += 1;
+                    current_cluster.push_back(point);
+                    curr_angle += 1;
                 }
             } else // if the distance between the points is greater than the threshold
             {
                 // add current point to the cluster
-                currCluster.push_back(point);
+                current_cluster.push_back(point);
                 
                 // add cluster to the vector of clusters
-                clusters.push_back(currCluster);
+                clusters.push_back(current_cluster);
 
                 // create new cluster
-                currCluster.clear();
-                angle += 1;
+                current_cluster.clear();
+                curr_angle += 1;
             }
 
-            if (nextAngle < angle){
+            if (next_angle < curr_angle){
                 break;
             }
         }
@@ -202,7 +194,7 @@ namespace circle_fit
         return clusters;
     }
 
-    bool ClassifyCluster(std::vector<geometry_msgs::Point> cluster)
+    bool classifyCluster(std::vector<geometry_msgs::Point> cluster)
     {
         geometry_msgs::Point point1, point2, p2, p3;
         point1 = cluster[0];
