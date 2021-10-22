@@ -17,6 +17,10 @@ The node models the turtlebot and the obstacles as having a circle footprint. If
 
 ![collision](img/collision.gif)
 
+Lastly, the node simulates lidar scanner data by publishing `sensor_msgs/LaserScan` messages. This is done by taking distance measurements between the turtle and any obstacles within the scanner's range. Circle-line intersection measurements were calculated such that the tube of radius `r` was intersected by the line defined by points 1 (the location of the robot relative to the tube) and 2 (the end point of the scanner's maximum range at a given angle). See below for what the lidar scanner looks like in `rviz`.
+
+![lidar_scanner](img/lidar_scanner.gif)
+
 ## Example Usage
 Open a terminal and run the following command
 ```

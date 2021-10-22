@@ -1,9 +1,9 @@
-minimum_range: 0.120
-maximum_range: 3.5
+minimum_range: 0.05
+maximum_range: 1.0
 angle_increment: 1
 sample_num: 360
 resolution: 0.015
 noise_level: 0.0
-wall_width: 5.0
-wall_height: 5.0
+wall_width: 2.5
+wall_height: 2.5
 scanner_frame_id: "base_scan"

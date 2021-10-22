@@ -265,7 +265,6 @@ class TubeWorld {
         }
 
         void set_rel_markers(void) {
-            std::cout << "setting relative markers!!" << std::endl;
             using namespace rigid2d;
 
             // find the transformation between the world frame and the turtle frame
@@ -348,7 +347,6 @@ class TubeWorld {
 
         void check_collision(void) {
             // check the distance betwen the center of the robot and the center of each tube
-            std::cout << "robot has collided with tube!!" << std::endl;
             for (auto loc : tube_locs) {
                 double dx = loc[0] - ninja_turtle.getX();
                 double dy = loc[1] - ninja_turtle.getY();
@@ -356,6 +354,7 @@ class TubeWorld {
                 double dist = sqrt(pow(dx,2) + pow(dy,2));
 
                 if (dist <= (tube_rad + robot_rad)) {
+                    std::cout << "robot has collided with tube!!" << std::endl;
                     double move_x = dy / dist;
                     double move_y = -dx / dist;
 
@@ -382,7 +381,6 @@ class TubeWorld {
         // still need to fix lidar function
         void simulate_lidar_scanner(void) {
             using namespace rigid2d;
-            std::cout << "simulating lidar scanner!" << std::endl;
 
             scan_msg.header.frame_id = turtle_frame_id;
             scan_msg.header.stamp = ros::Time::now();
