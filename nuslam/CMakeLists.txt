@@ -115,7 +115,13 @@ find_package(Armadillo REQUIRED)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES
- CATKIN_DEPENDS message_runtime nuturtlebot rigid2d roscpp sensor_msgs std_msgs
+ CATKIN_DEPENDS 
+    message_runtime
+    # nuturtlebot 
+    rigid2d 
+    roscpp 
+    sensor_msgs 
+    std_msgs
 #  DEPENDS system_lib
 )
 

@@ -1,0 +1,24 @@
+<launch>
+    <arg name="robot" default="localhost" doc="default localhost, meaning the node runs on the local machine"/>
+    <arg name="real" default="false" doc="if true (message from real sensor) if false (message from fake sensor)"/>
+
+    <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+
+    <group if="$(eval arg('robot')=='localhost')">
+        <group if="$(eval arg('real')=='true')">
+        </group>
+
+        <group unless="$(eval arg('real')=='true')">
+            <include file="$(find nuslam)/launch/landmark_detect.launch"/>
+            <node name="slam" pkg="nuslam" type="slam" output="screen"/>
+        </group>
+    </group>
+
+    <group unless="$(eval arg('robot')=='localhost')">
+    </group>
+
+    <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml"/> 
+    <rosparam command="load" file="$(find nuturtlesim)/config/frame_params.yaml"/>
+    <rosparam command="load" file="$(find nuturtlesim)/config/tube_world_params.yaml"/>
+    <rosparam command="load" file="$(find nuslam)/config/slam_params.yaml"/>
+</launch>
