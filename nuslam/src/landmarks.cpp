@@ -23,29 +23,90 @@
 
 class Landmarks {
     private:
+        // ros variables
         ros::NodeHandle n;
         ros::Subscriber lidar_sub;
-        ros::Timer timer;
+        ros::Publisher landmark_pub;
+        // ros::Timer timer;
         bool scan_received = false;
+        std::vector<std::vector<geometry_msgs::Point>> clusters;
+
+        // variables from parameter server
+        double min_range, max_range;
+        double tube_rad;
+        int frequency = 50;
+
+        visualization_msgs::MarkerArray marker_array;
 
     public:
         Landmarks() {
+            load_parameters();
+
             lidar_sub = n.subscribe("/scan", 100, &Landmarks::scan_callback, this);
-            timer = n.createTimer(ros::Duration(0.1), &Landmarks::main_loop, this);
+            landmark_pub = n.advertise<visualization_msgs::MarkerArray>("/real_sensor", 10);
+            // timer = n.createTimer(ros::Duration(0.1), &Landmarks::main_loop, this);
+        }
+
+        void load_parameters(void) {
+            n.getParam("minimum_range", min_range);
+            n.getParam("maximum_range", max_range);
+            n.getParam("tube_radius", tube_rad);
+
+            return;
         }
 
         void scan_callback(const sensor_msgs::LaserScan &msg) {
+            using namespace circle_fit;
             scan_received = true;
+            clusters = clusterPoints(msg.ranges, min_range, max_range);
+
             return;
         }
-        void main_loop(const ros::TimerEvent &) {
+        
+        void main_loop(void) {
+            using namespace circle_fit;
 
+            ros::Rate loop_rate(frequency);
+
+            while (ros::ok()) {
+                
+                if (scan_received) {
+                    int id = 0;
+
+                    // check to see if each cluster is a circle
+                    for (auto cluster : clusters) {
+
+                        if (classifyCluster(cluster)) {
+                            visualization_msgs::Marker marker = circleFit(cluster);
+
+                            if (marker.id < 0) {
+                                continue;
+                            }
+
+                            if (fabs(marker.scale.x - (2*tube_rad)) > 0.1) {
+                                continue;
+                            }
+
+                            marker.id = id; 
+                            id++;
+
+                            marker_array.markers.push_back(marker);
+                        }
+                    }
+
+                    landmark_pub.publish(marker_array);
+
+                    scan_received = false;
+                }
+                loop_rate.sleep();
+                ros::spinOnce();
+            }
         }
 };
 
 int main(int argc, char* argv[]) {
     ros::init(argc, argv, "landmarks");
     Landmarks node;
-    ros::spin();
+    node.main_loop();
     return 0;
 }

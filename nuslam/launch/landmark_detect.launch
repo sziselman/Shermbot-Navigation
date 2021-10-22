@@ -1,11 +1,14 @@
 <launch>
     <arg name="simulate" default="true" doc="if true (launches simulator on rviz) if false (launches landmark detection on turtlebot)"/>
+    <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro'"/>
+    <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/>
 
     <group if="$(arg simulate)">
-        <node pkg="nuslam" name="landmarks" type="landmarks" output="screen"/>
-        <node pkg="turtlebot3_teleop" name="turtlebot3_teleop_keyboard" type="turtlebot3_teleop_key" output="screen"/>
-        <node pkg="nuturtlesim" type="tube_world" name="tube_world" output="screen" />
-        <node name="rviz" pkg="rviz" args="-d $(find nuslam)/config/model.rviz -f world" type="rviz"/>
+        <node name="tube_world" pkg="nuturtlesim" type="tube_world" output="screen"/>
+        <node name="turtlebot3_teleop_keyboard" pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" output="screen"/>
+        <node name="odometer" pkg="rigid2d" type="odometer" output="screen"/>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+        <node name="rviz" pkg="rviz" args="-d $(find nuslam)/config/landmark_model.rviz -f world" type="rviz"/>
     </group>
 
     <group unless="$(arg simulate)">

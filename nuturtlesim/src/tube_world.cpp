@@ -64,7 +64,7 @@ std::mt19937 & get_random()
 class TubeWorld {
     private:
 
-        int frequency = 100;
+        int frequency = 50;
         bool latch = true;
 
         // variables from parameter server
@@ -525,6 +525,5 @@ int main(int argc, char *argv[]) {
     ros::init(argc, argv, "tube_world");
     TubeWorld node;
     node.main_loop();
-    // ros::spin();
     return 0;
 }
