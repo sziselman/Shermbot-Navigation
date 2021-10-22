@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/sarah/Documents/Navigation/ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/sarah/Documents/Navigation/ws/src/Shermbot/nuslam/include/**",
+        "/home/sarah/Documents/Navigation/ws/src/Shermbot/nuturtlesim/include/**",
+        "/home/sarah/Documents/Navigation/ws/src/Shermbot/rigid2d/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}

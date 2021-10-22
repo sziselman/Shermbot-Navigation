@@ -101,6 +101,7 @@ class TubeWorld {
 
         // variables
         geometry_msgs::Twist twist_msg;
+        rigid2d::Twist2D desired_twist;
         bool twist_received = false;
 
         rigid2d::DiffDrive ninja_turtle;
@@ -166,6 +167,20 @@ class TubeWorld {
             tube_locs.push_back(t4_loc);
             tube_locs.push_back(t5_loc);
             tube_locs.push_back(t6_loc);
+
+            return;
+        }
+
+        void twist_callback(const geometry_msgs::Twist& msg) {
+            // std::cout << "twist received!" << std::endl;
+            std::normal_distribution<> gaus_twist(0, twist_noise);
+
+            // create desired twist based on the message, add gaussian noise
+            desired_twist.dth = msg.angular.z + gaus_twist(get_random());
+            desired_twist.dx = msg.linear.x + gaus_twist(get_random());
+            desired_twist.dy = msg.linear.y;
+
+            twist_received = true;
 
             return;
         }
@@ -330,13 +345,6 @@ class TubeWorld {
             broadcaster.sendTransform(trans);
             return;
         }
-        
-        void twist_callback(const geometry_msgs::Twist& msg) {
-            // std::cout << "twist received!" << std::endl;
-            twist_msg = msg;
-            twist_received = true;
-            return;
-        }
 
         void check_collision(void) {
             // check the distance betwen the center of the robot and the center of each tube
@@ -371,6 +379,7 @@ class TubeWorld {
             return;
         }
 
+        // still need to fix lidar function
         void simulate_lidar_scanner(void) {
             using namespace rigid2d;
             std::cout << "simulating lidar scanner!" << std::endl;
@@ -393,15 +402,11 @@ class TubeWorld {
                 double x1 = ninja_turtle.getX() - xt;
                 double y1 = ninja_turtle.getY() - yt;
 
-                std::cout << "x1: " << x1 << " y1: " << y1 << std::endl;
-
                 int tube_angle = round(rad2deg(atan2(yt-y1, xt-x1)));
 
                 for (int i = tube_angle - 27; i < tube_angle + 27; i++) {
                     double x2 = x1 + max_scan_range * cos(deg2rad(i));
                     double y2 = y1 + max_scan_range * sin(deg2rad(i));
-
-                    std::cout << "x2: " << x2 << " y2: " << y2 << std::endl;
 
                     double dx = x2 - x1;
                     double dy = y2 - y1;
@@ -413,16 +418,16 @@ class TubeWorld {
                     if (fabs(dis) < 1e-5) {
                         double inter_x = (det * dy) / pow(dr,2);
                         double inter_y = -(det * dx) / pow(dr,2);
-                        distance = sqrt(pow(inter_x,2) + pow(inter_y,2));
+                        distance = sqrt(pow(inter_x-x1,2) + pow(inter_y-y1,2));
                     }
                     else if (dis > 0) {
                         double inter_x1 = ((det*dy) + ((dy/fabs(dy))*dx*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))))/pow(dr,2);
                         double inter_y1 = (-(det*dx) + fabs(dy)*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))) / pow(dr,2);
-                        double dist1 = sqrt(pow(inter_x1,2) + pow(inter_y1,2));
+                        double dist1 = sqrt(pow(inter_x1-x1,2) + pow(inter_y1-y1,2));
 
                         double inter_x2 = ((det*dy) - ((dy/fabs(dy))*dx*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))))/pow(dr,2);
                         double inter_y2 = (-(det*dx) - fabs(dy)*sqrt((pow(tube_rad,2)*pow(dr,2)) - pow(det,2))) / pow(dr,2);
-                        double dist2 = sqrt(pow(inter_x2,2) + pow(inter_y2,2));
+                        double dist2 = sqrt(pow(inter_x2-x1,2) + pow(inter_y2-y1,2));
 
                         distance = std::min(dist1, dist2);
                     }
@@ -434,7 +439,6 @@ class TubeWorld {
                     if (ind < 0) ind += 360;
 
                     if (distance < lidar_ranges[ind]) {
-                        std::cout << "angle " << ind << " distance " << distance << std::endl;
                         lidar_ranges[ind] = distance;
                     }
                 }
@@ -443,7 +447,6 @@ class TubeWorld {
             scan_msg.intensities = std::vector<float> (360, 4000);
 
             lidar_pub.publish(scan_msg);
-
         }
         
         void main_loop() {
@@ -485,17 +488,6 @@ class TubeWorld {
                 broadcast_world_to_turtle_tf();
                 
                 if (twist_received) {
-
-                    // std::cout << "twist message received :)" << std::endl;
-                    
-                    // broadcast_world_to_turtle_tf();
-
-                    // create desired twist based on the message, add gaussian noise
-                    Twist2D desired_twist;
-                    desired_twist.dth = twist_msg.angular.z + gaus_twist(get_random());
-                    desired_twist.dx = twist_msg.linear.x + gaus_twist(get_random());
-                    desired_twist.dy = twist_msg.linear.y;
-
                     check_collision();
                     
                     // find the wheel velocities required to achieve that twist
