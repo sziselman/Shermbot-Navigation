@@ -47,6 +47,7 @@ class EKFSlam {
     private:
         // ros variables (pubs, subs, etc.)
         ros::NodeHandle n;
+        ros::Publisher odom_pub;
         ros::Publisher slam_path_pub;
         ros::Publisher odom_path_pub;
         ros::Publisher slam_landmarks_pub;
@@ -72,13 +73,10 @@ class EKFSlam {
         std::vector<double> r_vec, q_vec;
         sensor_msgs::JointState joint_state_msg;
         visualization_msgs::MarkerArray landmarks;
-        nav_msgs::Path path;
+        nav_msgs::Path odom_path;
+        rigid2d::Twist2D twist;
 
-        rigid2d::DiffDrive odom_model = rigid2d::DiffDrive(wheel_base, wheel_rad, 0.0,
-                                                                                    0.0,
-                                                                                    0.0,
-                                                                                    0.0,
-                                                                                    0.0);
+        rigid2d::DiffDrive odom_model;
         
         slam_library::ExtendedKalman extended_kalman_filter;
         arma::colvec state_estimation;
@@ -87,7 +85,9 @@ class EKFSlam {
         EKFSlam() {
             load_parameters();
 
+            odom_pub = n.advertise<nav_msgs::Odometry>("/odom", 10);
             slam_path_pub = n.advertise<nav_msgs::Path>("/slam_path", 10);
+            odom_path_pub = n.advertise<nav_msgs::Path>("/odom_path", 10);
             slam_landmarks_pub = n.advertise<visualization_msgs::MarkerArray>("/estimated_landmarks", 10);
             landmark_sub = n.subscribe("/real_sensor", 10, &EKFSlam::landmark_callback, this);
             joint_sub = n.subscribe("/joint_states", 10, &EKFSlam::joint_state_callback, this);
@@ -127,6 +127,7 @@ class EKFSlam {
         }
 
         void initialize_slam(void) {
+            std::cout << "slam initialized" << std::endl;
             using namespace arma;
 
             // robot state
@@ -156,8 +157,17 @@ class EKFSlam {
             extended_kalman_filter = slam_library::ExtendedKalman(robot_state, map_state, Q, R);
         }
 
-        void draw_trajectory(void) {
-            geometry_msgs::PoseStamped slam_pose;
+        void draw_odom_path(void) {
+            // add pose to the path
+            geometry_msgs::PoseStamped pose_stamped;
+            pose_stamped.pose.position.x = odom_model.getX();
+            pose_stamped.pose.position.y = odom_model.getY();
+            pose_stamped.pose.orientation.z = odom_model.getTh();
+
+            odom_path.header.stamp = ros::Time::now();
+            odom_path.header.frame_id = world_frame_id;
+            odom_path.poses.push_back(pose_stamped);
+            odom_path_pub.publish(odom_path);
             return;
         }
 
@@ -168,14 +178,13 @@ class EKFSlam {
             Vector2D v;
             v.x = odom_model.getX();
             v.y = odom_model.getY();
-            // Transform2D T_ob(v_turt, 0.0);
             Transform2D T_ob(v, odom_model.getTh());
 
+            arma::colvec state_estimate = extended_kalman_filter.getStateVector();
             // transformation from map to body frame id
-            v.x = state_estimation(1);
-            v.y = state_estimation(2);
-            // Transform2D T_mb(v, 0.0);
-            Transform2D T_mb(v, state_estimation(0));
+            v.x = state_estimate(1);
+            v.y = state_estimate(2);
+            Transform2D T_mb(v, state_estimate(0));
 
             // transformation from map to odom frame id
             Transform2D T_mo = T_mb * T_ob.inv();
@@ -227,21 +236,28 @@ class EKFSlam {
 
             initialize_slam();
 
+            odom_model = rigid2d::DiffDrive(wheel_base, wheel_rad, 0.0,
+                                                                   0.0,
+                                                                   0.0,
+                                                                   0.0,
+                                                                   0.0);
+
             while (ros::ok()) {
 
-                broadcast_map2odom_tf();
                 broadcast_odom2body_tf();
+                broadcast_map2odom_tf();
 
                 // if joint states have been received, the configuration of the actual turtle gets updated
                 if (joint_states_received) {
-
                     // if landmarks have been received, implement data association
                     if (landmarks_received) {
-                        
                         // get the twist that corresponds to the updated joint states
-                        Twist2D twist = odom_model.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+                        twist = odom_model.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
                         // update the configuration of the odom model
                         odom_model(joint_state_msg.position[0], joint_state_msg.position[1]);
+
+                        // publish odom message, publish odom path
+                        draw_odom_path();
 
                         // make prediction based on the commanded twist
                         extended_kalman_filter.predict(twist);

@@ -11,7 +11,8 @@
         <group unless="$(eval arg('real')=='true')">
             <node name="landmarks" pkg="nuslam" type="landmarks" output="screen"/>
             <node name="tube_world" pkg="nuturtlesim" type="tube_world" output="screen"/>
-            <node name="odometer" pkg="rigid2d" type="odometer" output="screen"/>
+            <node name="turtlebot3_teleop_keyboard" pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" output="screen"/>
+            <!-- <node name="odometer" pkg="rigid2d" type="odometer" output="screen"/> -->
             <node name="slam" pkg="nuslam" type="slam" output="screen"/>
             <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
             <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuslam)/config/slam_model.rviz -f world"/>

@@ -7,12 +7,16 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
-        - /LaserScan1
         - /TF1
+        - /TF1/Frames1
         - /TF1/Tree1
+        - /Path1
         - /MarkerArray1/Namespaces1
-        - /MarkerArray2
+        - /Marker1/Status1
+        - /MarkerArray3
         - /MarkerArray3/Status1
+        - /MarkerArray3/Namespaces1
+        - /Path2
       Splitter Ratio: 0.6029411554336548
     Tree Height: 999
   - Class: rviz/Selection
@@ -93,7 +97,7 @@ Visualization Manager:
       Frames:
         All Enabled: false
         base_footprint:
-          Value: false
+          Value: true
         base_link:
           Value: false
         base_scan:
@@ -102,8 +106,10 @@ Visualization Manager:
           Value: false
         imu_link:
           Value: false
+        map:
+          Value: true
         odom:
-          Value: false
+          Value: true
         turtle:
           Value: true
         wheel_left_link:
@@ -120,8 +126,22 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          turtle:
-            {}
+          map:
+            odom:
+              base_footprint:
+                base_link:
+                  base_scan:
+                    {}
+                  caster_back_link:
+                    {}
+                  imu_link:
+                    {}
+                  wheel_left_link:
+                    {}
+                  wheel_right_link:
+                    {}
+            turtle:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -149,13 +169,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /ground_truth
       Name: MarkerArray
       Namespaces:
-        real: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /fake_sensor
@@ -179,6 +199,30 @@ Visualization Manager:
       Namespaces:
         real: true
       Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 237; 212; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /odom_path
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -208,7 +252,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.6491730213165283
+      Distance: 2.0820987224578857
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -245,4 +289,4 @@ Window Geometry:
     collapsed: true
   Width: 2302
   X: 1493
-  Y: 173
+  Y: 54
