@@ -81,7 +81,7 @@ class TubeWorld {
         double scan_res, scan_noise;
         double wall_width, wall_height;
 
-        std::string odom_frame_id, world_frame_id, turtle_frame_id, scanner_frame_id;
+        std::string odom_frame_id, world_frame_id, turtle_frame_id, scanner_frame_id, map_frame_id;
         std::string left_wheel_joint, right_wheel_joint;
         std::vector<double> t1_loc, t2_loc, t3_loc, t4_loc, t5_loc, t6_loc;
         std::vector<std::vector<double>> tube_locs;
@@ -131,8 +131,13 @@ class TubeWorld {
             n.getParam("max_range", max_range);
             n.getParam("wheel_base", wheel_base);
             n.getParam("wheel_radius", wheel_rad);
+
             n.getParam("odom_frame_id", odom_frame_id);
+            n.getParam("map_frame_id", map_frame_id);
             n.getParam("scanner_frame_id", scanner_frame_id);
+            n.getParam("world_frame_id", world_frame_id);
+            n.getParam("turtle_frame_id", turtle_frame_id);
+
             n.getParam("left_wheel_joint", left_wheel_joint);
             n.getParam("right_wheel_joint", right_wheel_joint);
 
@@ -145,8 +150,6 @@ class TubeWorld {
 
             n.getParam("tube_radius", tube_rad);
             n.getParam("tube_var", tube_var);
-            n.getParam("world_frame_id", world_frame_id);
-            n.getParam("turtle_frame_id", turtle_frame_id);
             n.getParam("twist_noise", twist_noise);
             n.getParam("slip_min", slip_min);
             n.getParam("slip_max", slip_max);
@@ -325,7 +328,27 @@ class TubeWorld {
             return;
         }
 
-        void broadcast_world_to_turtle_tf(void) {
+        void broadcast_world2map_tf(void) {
+            tf2::Quaternion q;
+            q.setRPY(0.0, 0.0, 0.0);
+
+            geometry_msgs::Quaternion quat = tf2::toMsg(q);
+
+            geometry_msgs::TransformStamped trans;
+            trans.header.stamp = ros::Time::now();
+            trans.header.frame_id = world_frame_id;
+            trans.child_frame_id = map_frame_id;
+            
+            trans.transform.translation.x = 0.0;
+            trans.transform.translation.y = 0.0;
+            trans.transform.translation.z = 0.0;
+            trans.transform.rotation = quat;
+
+            broadcaster.sendTransform(trans);
+            return;
+        }
+
+        void broadcast_map2turtle_tf(void) {
             tf2::Quaternion quaternion;
             quaternion.setRPY(0.0, 0.0, ninja_turtle.getTh());
 
@@ -333,7 +356,7 @@ class TubeWorld {
 
             geometry_msgs::TransformStamped trans;
             trans.header.stamp = ros::Time::now();
-            trans.header.frame_id = world_frame_id;
+            trans.header.frame_id = map_frame_id;
             trans.child_frame_id = turtle_frame_id;
 
             trans.transform.translation.x = ninja_turtle.getX();
@@ -483,7 +506,8 @@ class TubeWorld {
 
                 current_time = ros::Time::now();
 
-                broadcast_world_to_turtle_tf();
+                broadcast_world2map_tf();
+                broadcast_map2turtle_tf();
                 
                 if (twist_received) {
                     check_collision();
@@ -503,8 +527,6 @@ class TubeWorld {
                     // update the configuration of the diff-drive robot based on new wheel angles
                     ninja_turtle(joint_msg.position[0] + wheel_vel.uL * slip_noise(get_random()), 
                                  joint_msg.position[1] + wheel_vel.uR * slip_noise(get_random()));
-
-                    broadcast_world_to_turtle_tf();
                     
                     set_rel_markers();
 

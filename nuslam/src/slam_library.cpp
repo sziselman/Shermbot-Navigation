@@ -33,7 +33,7 @@ namespace slam_library
     }
 
     ExtendedKalman::ExtendedKalman() {
-
+        return;
     }
 
     ExtendedKalman::ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R)

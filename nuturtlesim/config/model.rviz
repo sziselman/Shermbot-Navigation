@@ -4,14 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
-        - /Grid1
-        - /LaserScan1
-        - /TF1
         - /TF1/Tree1
         - /MarkerArray1/Namespaces1
-        - /MarkerArray2
         - /Marker1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 999
@@ -102,6 +96,8 @@ Visualization Manager:
           Value: false
         imu_link:
           Value: false
+        map:
+          Value: true
         odom:
           Value: false
         turtle:
@@ -120,8 +116,9 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          turtle:
-            {}
+          map:
+            turtle:
+              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -237,4 +234,4 @@ Window Geometry:
     collapsed: true
   Width: 2302
   X: 1493
-  Y: 395
+  Y: 321
