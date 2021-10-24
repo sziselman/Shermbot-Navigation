@@ -95,26 +95,13 @@ namespace slam_library
             /// \param id : the id of the landmark
             void update(const Twist2D &tw, colvec z_id, int id);
 
-            // /// \brief returns the state vector
-            // /// \return state_vector
-            // const colvec & getstate_vector() const;
+            /// \brief returns the state vector
+            /// \return state_vector
+            const colvec & getStateVector() const;
 
-            // /// \brief updates the state vector of the EKF object
-            // /// \param newState - the new state vector
-            // ExtendedKalman & updatestate_vector(colvec newState);
-
-            // /// \brief returns the covariance matrix
-            // /// \return covariance
-            // const mat & getCov() const;
-
-            // /// \brief updates the covariance matrix of the EKF object
-            // /// \param covNew - the new covariance matrix
-            // ExtendedKalman & updateCov(mat covNew);
-
-            // /// \brief calculates the Kalman Gain from the linearized measurement model
-            // /// \param j - the landmark j
-            // /// \return (3+2n)x2 matrix, Kalman gain 
-            // mat KalmanGain(int j);
+            /// \brief returns the covariance matrix
+            /// \return covariance
+            const mat & getCovariance() const;
 
             // /// \brief gets the matrix H_j (to use the temporary state vector instead of estimated)
             // /// spoke with Nathaniel Nyberg to create this function for data association

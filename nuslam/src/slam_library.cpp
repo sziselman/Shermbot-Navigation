@@ -262,21 +262,15 @@ namespace slam_library
         return;
     }
 
-    // const colvec & ExtendedKalman::getstate_vector() const
-    // {
-    //     return state_vector;
-    // }
+    const colvec & ExtendedKalman::getStateVector() const
+    {
+        return state_vector;
+    }
 
-    // ExtendedKalman & ExtendedKalman::updatestate_vector(colvec newState)
-    // {
-    //     state_vector = newState;
-    //     return *this;
-    // }
-
-    // const mat & ExtendedKalman::getCov() const
-    // {
-    //     return covariance;
-    // }
+    const mat & ExtendedKalman::getCovariance() const
+    {
+        return covariance;
+    }
 
     // ExtendedKalman & ExtendedKalman::updateCov(mat newCov)
     // {
