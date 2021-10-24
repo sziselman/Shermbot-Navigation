@@ -41,6 +41,8 @@ namespace slam_library
         // size = arma::size(robotState) + arma::size(mapState);
         n = mapState.n_elem / 2;
         len = robotState.n_elem + mapState.n_elem;
+        seen_landmarks = 0;
+
         state_vector = colvec(len);
 
         process_noise = Q;
@@ -158,6 +160,7 @@ namespace slam_library
         colvec h_j(2);
         double m_xj = state_vec(1+2*j);
         double m_yj = state_vec(2+2*j);
+        // std::cout << "m_x,j: " << m_xj << ", m_y,j: " << m_yj << std::endl;
         double th = state_vec(0);
         double x = state_vec(1);
         double y = state_vec(2);
@@ -172,8 +175,10 @@ namespace slam_library
     {
         mat H(2, len, fill::zeros);
 
-        double dx = state_vec(1+2*j) - state_vec(1);
-        double dy = state_vec(2+2*j) - state_vec(2);
+        double dx = state_vec(3+2*(j-1)) - state_vec(1);
+
+        double dy = state_vec(4+2*(j-1)) - state_vec(2);
+
         double d = pow(dx, 2) + pow(dy, 2);
 
         H(1, 0) = -1;
@@ -190,59 +195,81 @@ namespace slam_library
 
     int ExtendedKalman::associateLandmark(colvec z_i)
     {
-        vec temp(3+2*(seen_landmarks+1));
+        // colvec temp(3+2*(seen_landmarks+1));
+        colvec temp(len, fill::zeros);
 
-        double max_threshold = 50;
-        double min_threshold = .5;
+        // std::cout << "seen landmarks: " << seen_landmarks << std::endl;
+
+        // double min_threshold = 1e-12;
+        // double max_threshold = 1e-9;
+        double min_threshold = 1;
+        double max_threshold = 100;
         
         // if no landmarks have been seen, initialize this new landmark
         if (seen_landmarks == 0) {
-            state_vector(3) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
-            state_vector(4) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
-
-           return seen_landmarks++;
+           seen_landmarks++;
+           return seen_landmarks;
         }
 
         // utilize a temporary state vector with landmark N+1
         temp(span(0, 2+2*seen_landmarks)) = state_vector(span(0, 2+2*seen_landmarks));
+
         temp(3+2*seen_landmarks) = temp(1) + z_i(0) * cos(z_i(1) + temp(0));
         temp(4+2*seen_landmarks) = temp(2) + z_i(0) * sin(z_i(1) + temp(0));
 
         for (int k = 1; k < seen_landmarks+1; k++)
         {
+            std::cout << "landmark " << k << std::endl;
+
             // compute the linearized measurement model
             mat H_k = linearizedMeasurementModel(k, temp);
             
             // compute the covariance
             mat psi_k = H_k * covariance * H_k.t() + sensor_noise;
-
+            
             // compute the expected measurement
             vec z_hat = computeTheoreticalMeasurement(k, temp);
 
             // compute the mahalanobis distance
-            mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
-            double mahalanobis = d_k(0);
+            double mahalanobis;
+
+            // set mahalanobis distance for landmark N+1 to be min threshold
+            if (k == seen_landmarks+1) {
+                mahalanobis = min_threshold;
+            }
+            // calculate mahalanobis distance for all other landmarks
+            else {
+                std::cout << "z_i: " << z_i(0) << ", " << z_i(1) << std::endl;
+                std::cout << "z_hat: " << z_hat(0) << ", " << z_hat(1) << std::endl;
+                colvec dz = z_i - z_hat;
+                std::cout << "dz: " << dz(0) << ", " << dz(1) << std::endl;
+
+                mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
+                mahalanobis = d_k(0) * 1e12;
+            }
   
+            std::cout << "mahalanobis distance is " << mahalanobis << std::endl;
+
             // if mahalanobis distance is less than some threshold, return the current landmark
             if (mahalanobis < min_threshold) {
+                std::cout << "mahalanobis distance less than threshold, returning the current landmark" << std::endl;
                 return k;
-                
             }
-            // if mahalanobis distance is too far but too close to any landmarks, then skip it
+            // if mahalanobis distance is within a "gray" area, return -1 to skip it
             else if ((mahalanobis > min_threshold) && (mahalanobis < max_threshold)) {
+                std::cout << "mahalanobis distance within gray area, ignore the measurement" << std::endl;
                 return -1; // skip the landmark
             }
         }
 
-        // // add the new landmark to the state vector
-        // state_vector(3+2*seen_landmarks) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
-        // state_vector(4+2*seen_landmarks) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
-        return seen_landmarks++;
+        // add the new landmark to the list of seen landmarks
+        seen_landmarks++;
+        return seen_landmarks;
     }
 
     void ExtendedKalman::initializeLandmark(colvec z_i, int id) {
-        state_vector(3+2*id) = state_vector(1) + z_i(0)*cos(z_i(1) + state_vector(0));
-        state_vector(4+2*id) = state_vector(1) + z_i(0)*sin(z_i(1) + state_vector(0));
+        state_vector(1+2*id) = state_vector(1) + z_i(0)*cos(z_i(1) + state_vector(0));
+        state_vector(2+2*id) = state_vector(2) + z_i(0)*sin(z_i(1) + state_vector(0));
         return;
     }
     
@@ -270,6 +297,11 @@ namespace slam_library
     const mat & ExtendedKalman::getCovariance() const
     {
         return covariance;
+    }
+
+    const int & ExtendedKalman::getSeenLandmarks() const
+    {
+        return seen_landmarks;
     }
 
     // mat ExtendedKalman::getH2(int j, vec temp)

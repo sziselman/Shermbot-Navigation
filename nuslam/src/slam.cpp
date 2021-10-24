@@ -67,7 +67,7 @@ class EKFSlam {
         int frequency = 10;
         bool landmarks_received = false;
         bool joint_states_received = false;
-        int seen_landmarks = 0;
+        int seen_landmarks;
         int total_landmarks = 6;
 
         std::vector<double> r_vec, q_vec;
@@ -155,6 +155,7 @@ class EKFSlam {
             }
 
             extended_kalman_filter = slam_library::ExtendedKalman(robot_state, map_state, Q, R);
+            seen_landmarks = extended_kalman_filter.getSeenLandmarks();
         }
 
         void draw_odom_path(void) {
@@ -244,6 +245,8 @@ class EKFSlam {
 
             while (ros::ok()) {
 
+                std::cout << "new loop +==============================================" << std::endl;
+
                 broadcast_odom2body_tf();
                 broadcast_map2odom_tf();
 
@@ -271,8 +274,19 @@ class EKFSlam {
 
                             colvec z_i = cartesian2polar(x, y);
 
+                            if (landmarks.markers.size() > 1) {
+                                std::cout << "num of measurements: " << landmarks.markers.size() << std::endl;
+                                std::cout << "landmark x: " << x << " y: " << y << std::endl;
+                                std::cout << "landmark dist: " << z_i(0) << " angle: " << z_i(1) << std::endl;
+                                std::cout << "seen landmarks: " << seen_landmarks << std::endl;
+                            }
+
                             // get the associated landmark id
                             int landmark_id = extended_kalman_filter.associateLandmark(z_i);
+
+                            if (landmarks.markers.size() > 1) {
+                                std::cout << "associated landmark id: " << landmark_id << std::endl;
+                            }
 
                             // if the landmark is out of range, ignore it
                             if (landmark_id < 0) {
@@ -281,7 +295,7 @@ class EKFSlam {
                             // if a landmark is greater than the number of seen landmarks (new landmark) initialize it
                             else if (landmark_id > seen_landmarks) {
                                 extended_kalman_filter.initializeLandmark(z_i, landmark_id);
-                                seen_landmarks++;
+                                seen_landmarks = extended_kalman_filter.getSeenLandmarks();
                             }
                         }
 

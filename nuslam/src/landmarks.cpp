@@ -36,8 +36,6 @@ class Landmarks {
         double tube_rad;
         int frequency = 50;
 
-        visualization_msgs::MarkerArray marker_array;
-
     public:
         Landmarks() {
             load_parameters();
@@ -73,6 +71,8 @@ class Landmarks {
                 if (scan_received) {
                     int id = 0;
 
+                    visualization_msgs::MarkerArray marker_array;
+                    
                     // check to see if each cluster is a circle
                     for (auto cluster : clusters) {
 

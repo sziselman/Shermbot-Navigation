@@ -103,6 +103,10 @@ namespace slam_library
             /// \return covariance
             const mat & getCovariance() const;
 
+            /// \brief returns the number of seen landmarks
+            /// \return int
+            const int & getSeenLandmarks() const;
+
             // /// \brief gets the matrix H_j (to use the temporary state vector instead of estimated)
             // /// spoke with Nathaniel Nyberg to create this function for data association
             // mat getH2(int j, vec temp);
