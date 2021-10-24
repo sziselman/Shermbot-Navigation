@@ -495,13 +495,14 @@ class TubeWorld {
                     joint_msg.header.stamp = current_time;
                     joint_msg.header.frame_id = turtle_frame_id;
 
-                    joint_msg.position[0] += wheel_vel.uL * (current_time - last_time).toSec() + (wheel_vel.uL * slip_noise(get_random()));
-                    joint_msg.position[1] += wheel_vel.uR * (current_time - last_time).toSec() + (wheel_vel.uR * slip_noise(get_random()));
+                    joint_msg.position[0] += wheel_vel.uL * (current_time - last_time).toSec();
+                    joint_msg.position[1] += wheel_vel.uR * (current_time - last_time).toSec();
 
                     joint_pub.publish(joint_msg);
 
                     // update the configuration of the diff-drive robot based on new wheel angles
-                    ninja_turtle(joint_msg.position[0], joint_msg.position[1]);
+                    ninja_turtle(joint_msg.position[0] + wheel_vel.uL * slip_noise(get_random()), 
+                                 joint_msg.position[1] + wheel_vel.uR * slip_noise(get_random()));
 
                     broadcast_world_to_turtle_tf();
                     

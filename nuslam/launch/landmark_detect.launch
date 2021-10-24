@@ -18,5 +18,4 @@
     <rosparam command="load" file="$(find nuturtlesim)/config/frame_params.yaml"/>
     <rosparam command="load" file="$(find nuturtlesim)/config/tube_world_params.yaml"/>
     <rosparam command="load" file="$(find nuturtlesim)/config/scan_params.yaml"/>
-    <rosparam command="load" file="$(find nuslam)/config/slam_params.yaml"/>
 </launch>

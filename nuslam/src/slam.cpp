@@ -49,6 +49,7 @@ class EKFSlam {
         ros::NodeHandle n;
         ros::Publisher slam_path_pub;
         ros::Publisher odom_path_pub;
+        ros::Publisher slam_landmarks_pub;
         ros::Subscriber landmark_sub;
         ros::Subscriber joint_sub;
 
@@ -90,8 +91,8 @@ class EKFSlam {
             load_parameters();
 
             slam_path_pub = n.advertise<nav_msgs::Path>("/slam_path", 10);
-            odom_path_pub = n.advertise<nav_msgs::Path>("/odom_path", 10);
-            landmark_sub = n.subscribe("/scan", 10, &EKFSlam::landmark_callback, this);
+            slam_landmarks_pub = n.advertise<visualization_msgs::MarkerArray>("/estimated_landmarks", 10);
+            landmark_sub = n.subscribe("/real_sensor", 10, &EKFSlam::landmark_callback, this);
             joint_sub = n.subscribe("/joint_states", 10, &EKFSlam::joint_state_callback, this);
         }
 
@@ -160,6 +161,10 @@ class EKFSlam {
             extended_kalman_filter = slam_library::ExtendedKalman(robot_state, map_state, Q, R);
         }
 
+        void draw_trajectory(void) {
+            geometry_msgs::PoseStamped slam_pose;
+
+        }
         void main_loop(void) {
             using namespace rigid2d;
             using namespace arma;
@@ -203,9 +208,37 @@ class EKFSlam {
                                 extended_kalman_filter.initializeLandmark(z_i, landmark_id);
                                 seen_landmarks++;
                             }
-
-
                         }
+
+                        colvec state_estimation = extended_kalman_filter.getStateVector();
+
+                        visualization_msgs::MarkerArray estimated_landmarks;
+
+                        // publish the estimated landmarks
+                        for (int i = 0; i < seen_landmarks; i++) {
+                            visualization_msgs::Marker marker;
+                            marker.header.frame_id = map_frame_id;
+                            marker.header.stamp = ros::Time::now();
+                            marker.ns = "estimate";
+                            marker.pose.position.x = state_estimation(3+2*i);
+                            marker.pose.position.y = state_estimation(4+2*i);
+                            marker.pose.position.z = 0.125;
+                            marker.scale.x = 2*tube_rad;
+                            marker.scale.y = 2*tube_rad;
+                            marker.scale.z = 0.25;
+                            marker.color.a = 1.0;
+                            marker.color.r = 38. / 255.;
+                            marker.color.g = 91. / 255.;
+                            marker.color.b = 95. / 255.;
+                            marker.frame_locked = true;
+
+                            estimated_landmarks.markers.push_back(marker);
+                        }
+
+                        slam_landmarks_pub.publish(estimated_landmarks);
+
+                        // publish the slam path
+
                         landmarks_received = false;
                     }
 

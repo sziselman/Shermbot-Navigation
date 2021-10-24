@@ -1,9 +1,9 @@
 /// \file landmarks.cpp
 /// \brief contains a node called landmarks to detect landmarks and publish their relative locations
 /// 
-/// PARAMETERS:     minRange (the minimum range that the Lidar sensor can sense)
-///                 maxRange (the maximum range that the Lidar sensor can sesne)
-///                 tubeRad (the radius of the tubes)
+/// PARAMETERS:     min_range (the minimum range that the Lidar sensor can sense)
+///                 max_range (the maximum range that the Lidar sensor can sesne)
+///                 tube_rad (the radius of the tubes)
 /// PUBLISHES:      visualization_msgs::MarkerArray (array of markers that are the detected landmarks)
 /// SUBSCRIBES:     sensor_msgs::LaserScan (scan message from the Lidar Sensor)
 /// SERVICES:       none

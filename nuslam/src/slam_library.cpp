@@ -272,19 +272,6 @@ namespace slam_library
         return covariance;
     }
 
-    // ExtendedKalman & ExtendedKalman::updateCov(mat newCov)
-    // {
-    //     covariance = newCov;
-    //     return *this;
-    // }
-
-    // mat ExtendedKalman::KalmanGain(int j)
-    // {
-    //     mat K_i(len,2);
-    //     K_i = covariance * getH(j).t() * (getH(j) * covariance * getH(j).t() + sensor_noise).i();
-    //     return K_i;
-    // }
-
     // mat ExtendedKalman::getH2(int j, vec temp)
     // {
     //     mat tempH;
