@@ -13,7 +13,7 @@ namespace slam_library
     using namespace arma;
     using namespace rigid2d;
 
-    colvec RangeBearing(double xRel, double yRel)
+    colvec xy_to_rangeBearing(double xRel, double yRel)
     {
         colvec rangeBearing(2);
         rangeBearing(0) = sqrt(pow(xRel, 2) + (pow(yRel, 2)));
@@ -21,66 +21,50 @@ namespace slam_library
         return rangeBearing;
     }
 
+    void ExtendedKalman::initCov()
+    {
+        covariance = mat(len, len, fill::zeros);
+        
+        for (int i = 3; i < len; ++i)
+        {
+            covariance(i, i) = INT_MAX;
+        }
+        return;
+    }
+
+    ExtendedKalman::ExtendedKalman() {
+
+    }
+
     ExtendedKalman::ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R)
     {
         // size = arma::size(robotState) + arma::size(mapState);
         n = mapState.n_elem / 2;
         len = robotState.n_elem + mapState.n_elem;
-        stateVec = colvec(len);
+        state_vector = colvec(len);
 
-        processNoise = Q;
-        sensorNoise = R;
+        process_noise = Q;
+        sensor_noise = R;
 
         // propagate the column vector v (state vector)
-        stateVec(0) = robotState(0);
-        stateVec(1) = robotState(1);
-        stateVec(2) = robotState(2);
+        state_vector(0) = robotState(0);
+        state_vector(1) = robotState(1);
+        state_vector(2) = robotState(2);
 
         for (int i = 3; i < len; ++i)
         {
-            stateVec(i) = mapState(i - 3);
+            state_vector(i) = mapState(i - 3);
         }
 
         initCov();
+        return;
     }
 
-    const colvec & ExtendedKalman::getStateVec() const
-    {
-        return stateVec;
-    }
-
-    ExtendedKalman & ExtendedKalman::updateStateVec(colvec newState)
-    {
-        stateVec = newState;
-        return *this;
-    }
-
-    const mat & ExtendedKalman::getCov() const
-    {
-        return cov;
-    }
-
-    ExtendedKalman & ExtendedKalman::updateCov(mat newCov)
-    {
-        cov = newCov;
-        return *this;
-    }
-
-    void ExtendedKalman::initCov()
-    {
-        cov = mat(len, len, fill::zeros);
-        
-        for (int i = 3; i < len; ++i)
-        {
-            cov(i, i) = INT_MAX;
-        }
-    }
-
-    colvec ExtendedKalman::g(colvec prevState, const Twist2D & tw)
+    colvec ExtendedKalman::predictEstimate(const Twist2D & tw)
     {
         double dq_th, dq_x, dq_y;
 
-        double theta = prevState(0);
+        double theta = state_vector(0);
 
         if (tw.dth == 0.0)
         {
@@ -94,34 +78,48 @@ namespace slam_library
             dq_y = (tw.dx / tw.dth) * cos(theta) - (tw.dx / tw.dth) * cos(theta + tw.dth);
         }
 
-        colvec newState(3+2*n);
-        newState = prevState;
-        newState(0) += dq_th;
-        newState(1) += dq_x; 
-        newState(2) += dq_y;
+        colvec estimate_state(3+2*n);
+        estimate_state = state_vector;
+        estimate_state(0) += dq_th;
+        estimate_state(1) += dq_x; 
+        estimate_state(2) += dq_y;
 
-        return newState;
+        return estimate_state;
     }
 
-    mat ExtendedKalman::Q_bar()
+    mat ExtendedKalman::propagateUncertainty(const Twist2D &tw) {
+        mat Q_bar(len, len);
+        Q_bar = expanded_process_noise();
+
+        mat A(len, len);
+        A = getA(tw);
+
+        mat uncertainty(len, len);
+        uncertainty = A * covariance * A.t() + Q_bar;
+
+        return uncertainty;
+    }
+
+    mat ExtendedKalman::expanded_process_noise(void)
     {
         mat Q_bar(len, len, fill::zeros);
 
-        Q_bar(0, 0) = processNoise(0, 0);
-        Q_bar(0, 1) = processNoise(0, 1);
-        Q_bar(0, 2) = processNoise(0, 2);
-        Q_bar(1, 0) = processNoise(1, 0);
-        Q_bar(1, 1) = processNoise(1, 1);
-        Q_bar(1, 2) = processNoise(1, 2);
-        Q_bar(2, 0) = processNoise(2, 0);
-        Q_bar(2, 1) = processNoise(2, 1);
-        Q_bar(2, 2) = processNoise(2, 2);
+        Q_bar(0, 0) = process_noise(0, 0);
+        Q_bar(0, 1) = process_noise(0, 1);
+        Q_bar(0, 2) = process_noise(0, 2);
+        Q_bar(1, 0) = process_noise(1, 0);
+        Q_bar(1, 1) = process_noise(1, 1);
+        Q_bar(1, 2) = process_noise(1, 2);
+        Q_bar(2, 0) = process_noise(2, 0);
+        Q_bar(2, 1) = process_noise(2, 1);
+        Q_bar(2, 2) = process_noise(2, 2);
+
         return Q_bar;
     }
 
-    mat ExtendedKalman::getA(colvec prevState, const Twist2D & tw)
+    mat ExtendedKalman::getA(const Twist2D & tw)
     {
-        double theta = prevState(0);
+        double theta = state_vector(0);
 
         mat I(len, len, fill::eye);
 
@@ -142,37 +140,27 @@ namespace slam_library
         return A;
     }
 
-    colvec ExtendedKalman::h(int j)
+    colvec ExtendedKalman::computeTheoreticalMeasurement(int j, colvec state_vec)
     {
         colvec h_j(2);
-        double m_xj = stateVec(1+2*j);
-        double m_yj = stateVec(2+2*j);
-        double th = stateVec(0);
-        double x = stateVec(1);
-        double y = stateVec(2);
+        double m_xj = state_vec(1+2*j);
+        double m_yj = state_vec(2+2*j);
+        double th = state_vec(0);
+        double x = state_vec(1);
+        double y = state_vec(2);
 
-        double dx = m_xj - x;
-        double dy = m_yj - y;
-
-        h_j(0) = sqrt(pow(dx, 2) + pow(dy, 2));
-        h_j(1) = normalize_angle(atan2(dy, dx) - th);
+        h_j(0) = sqrt(pow(m_xj - x, 2) + pow(m_yj - y, 2));
+        h_j(1) = normalize_angle(atan2(m_yj - y, m_xj - x) - th);
 
         return h_j;
     }
 
-    mat ExtendedKalman::KalmanGain(int j)
-    {
-        mat K_i(len,2);
-        K_i = cov * getH(j).t() * (getH(j) * cov * getH(j).t() + sensorNoise).i();
-        return K_i;
-    }
-
-    mat ExtendedKalman::getH(int j)
+    mat ExtendedKalman::linearizedMeasurementModel(int j, colvec state_vec)
     {
         mat H(2, len, fill::zeros);
 
-        double dx = stateVec(1+2*j) - stateVec(1);
-        double dy = stateVec(2+2*j) - stateVec(2);
+        double dx = state_vec(1+2*j) - state_vec(1);
+        double dy = state_vec(2+2*j) - state_vec(2);
         double d = pow(dx, 2) + pow(dy, 2);
 
         H(1, 0) = -1;
@@ -187,85 +175,119 @@ namespace slam_library
         return H;
     }
 
-    mat ExtendedKalman::getH2(int j, vec temp)
+    int ExtendedKalman::associateLandmark(vec z_i)
     {
-        mat tempH;
+        vec temp(3+2*(seen_landmarks+1));
 
-        double dx, dy, d;
-
-        if (j >= n)
-        {
-            dx = temp(1+2*j) - temp(1);
-            dy = temp(2+2*j) - temp(2);
-            d = pow(dx, 2) + pow(dy, 2);
-
-            tempH = mat(2, 3+2*(n+1), fill::zeros);
-        } else
-        {
-            dx = stateVec(1+2*j) - stateVec(1);
-            dy = stateVec(2+2*j) - stateVec(2);
-            d = pow(dx, 2) + pow(dy, 2);
-
-            tempH = mat(2, 3+2*n, fill::zeros);
-        }
-
-        tempH(1, 0) = -1;
-        tempH(0, 1) = -dx / sqrt(d);
-        tempH(1, 1) = dy / d;
-        tempH(0, 2) = -dy / sqrt(d);
-        tempH(1, 2) = -dx / d;
-        tempH(0, 3+2*j) = dx / sqrt(d);
-        tempH(1, 3+2*j) = -dy / d;
-        tempH(0, 4+2*j) = dy / sqrt(d);
-        tempH(1, 4+2*j) = dx / d;
-        return tempH;
-    }
-
-    int ExtendedKalman::DataAssociation(vec z_i)
-    {
-        vec temp(3+2*(N+1));
         double max_threshold = 50;
         double min_threshold = .5;
         
-        if (N==0)
-        {
-            // initialize the seen landmark
-            stateVec(3) = stateVec(1) + z_i(0) * cos(z_i(1) + stateVec(0));
-            stateVec(4) = stateVec(2) + z_i(0) * sin(z_i(1) + stateVec(0));
+        // if no landmarks have been seen, initialize this new landmark
+        if (seen_landmarks == 0) {
+            state_vector(3) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
+            state_vector(4) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
 
-           return N++;
+           return seen_landmarks++;
         }
 
-        temp(span(0, 2+2*N)) = stateVec(span(0, 2+2*N));
-        temp(3+2*N) = temp(1) + z_i(0) * cos(z_i(1) + temp(0));
-        temp(4+2*N) = temp(2) + z_i(0) * sin(z_i(1) + temp(0));
+        // utilize a temporary state vector with landmark N+1
+        temp(span(0, 2+2*seen_landmarks)) = state_vector(span(0, 2+2*seen_landmarks));
+        temp(3+2*seen_landmarks) = temp(1) + z_i(0) * cos(z_i(1) + temp(0));
+        temp(4+2*seen_landmarks) = temp(2) + z_i(0) * sin(z_i(1) + temp(0));
 
-        for (int i = 1; i <= N; i++)
+        for (int k = 1; k < seen_landmarks+1; k++)
         {
-            stateVec.print();
             // compute the linearized measurement model
-            mat H_k = getH(i);
+            mat H_k = linearizedMeasurementModel(k, temp);
             
             // compute the covariance
-            mat psi_k = H_k * cov * H_k.t() + sensorNoise;
+            mat psi_k = H_k * covariance * H_k.t() + sensor_noise;
+
             // compute the expected measurement
-            vec z_hat = h(i);
+            vec z_hat = computeTheoreticalMeasurement(k, temp);
 
             // compute the mahalanobis distance
             mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
             double mahalanobis = d_k(0);
   
-            if (mahalanobis < min_threshold) // if less than min threshold
-            {
-                return i; // return the current landmark 
-            } else if ((mahalanobis > min_threshold) && (mahalanobis < max_threshold)) // if not too close yet not too far
-            {
+            // if mahalanobis distance is less than some threshold, return the current landmark
+            if (mahalanobis < min_threshold) {
+                return k;
+                
+            }
+            // if mahalanobis distance is too far but too close to any landmarks, then skip it
+            else if ((mahalanobis > min_threshold) && (mahalanobis < max_threshold)) {
                 return -1; // skip the landmark
             }
-
         }
-        stateVec(3+2*N) = stateVec(1) + z_i(0) * cos(z_i(1) + stateVec(0));
-        stateVec(4+2*N) = stateVec(2) + z_i(0) * sin(z_i(1) + stateVec(0));
-        return N++;
+
+        // add the new landmark to the state vector
+        state_vector(3+2*seen_landmarks) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
+        state_vector(4+2*seen_landmarks) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
+        return seen_landmarks++;
     }
+
+    // const colvec & ExtendedKalman::getstate_vector() const
+    // {
+    //     return state_vector;
+    // }
+
+    // ExtendedKalman & ExtendedKalman::updatestate_vector(colvec newState)
+    // {
+    //     state_vector = newState;
+    //     return *this;
+    // }
+
+    // const mat & ExtendedKalman::getCov() const
+    // {
+    //     return covariance;
+    // }
+
+    // ExtendedKalman & ExtendedKalman::updateCov(mat newCov)
+    // {
+    //     covariance = newCov;
+    //     return *this;
+    // }
+
+    // mat ExtendedKalman::KalmanGain(int j)
+    // {
+    //     mat K_i(len,2);
+    //     K_i = covariance * getH(j).t() * (getH(j) * covariance * getH(j).t() + sensor_noise).i();
+    //     return K_i;
+    // }
+
+    // mat ExtendedKalman::getH2(int j, vec temp)
+    // {
+    //     mat tempH;
+
+    //     double dx, dy, d;
+
+    //     if (j >= n)
+    //     {
+    //         dx = temp(1+2*j) - temp(1);
+    //         dy = temp(2+2*j) - temp(2);
+    //         d = pow(dx, 2) + pow(dy, 2);
+
+    //         tempH = mat(2, 3+2*(n+1), fill::zeros);
+    //     } else
+    //     {
+    //         dx = state_vector(1+2*j) - state_vector(1);
+    //         dy = state_vector(2+2*j) - state_vector(2);
+    //         d = pow(dx, 2) + pow(dy, 2);
+
+    //         tempH = mat(2, 3+2*n, fill::zeros);
+    //     }
+
+    //     tempH(1, 0) = -1;
+    //     tempH(0, 1) = -dx / sqrt(d);
+    //     tempH(1, 1) = dy / d;
+    //     tempH(0, 2) = -dy / sqrt(d);
+    //     tempH(1, 2) = -dx / d;
+    //     tempH(0, 3+2*j) = dx / sqrt(d);
+    //     tempH(1, 3+2*j) = -dy / d;
+    //     tempH(0, 4+2*j) = dy / sqrt(d);
+    //     tempH(1, 4+2*j) = dx / d;
+    //     return tempH;
+    // }
+
 }

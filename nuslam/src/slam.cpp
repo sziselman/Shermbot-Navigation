@@ -32,6 +32,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <sensor_msgs/JointState.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include "rigid2d/rigid2d.hpp"
 #include "rigid2d/diff_drive.hpp"
@@ -48,7 +49,7 @@ class EKFSlam {
         ros::NodeHandle n;
         ros::Publisher slam_path_pub;
         ros::Publisher odom_path_pub;
-        ros::Subscriber landmark_sub;
+        ros::Subscriber lidar_sub;
         ros::Subscriber joint_sub;
 
         // parameters
@@ -61,13 +62,14 @@ class EKFSlam {
 
         // variables
         int frequency = 10;
-        bool landmarks_received = false;
+        bool scan_received = false;
         bool joint_states_received = false;
         int seen_landmarks = 0;
         int total_landmarks = 6;
 
         std::vector<double> r_vec, q_vec;
         sensor_msgs::JointState joint_state_msg;
+        sensor_msgs::LaserScan scan_msg;
 
         rigid2d::DiffDrive actual_robot = rigid2d::DiffDrive(wheel_base, wheel_rad, 0.0,
                                                                                     0.0,
@@ -89,7 +91,7 @@ class EKFSlam {
 
             slam_path_pub = n.advertise<nav_msgs::Path>("/slam_path", 10);
             odom_path_pub = n.advertise<nav_msgs::Path>("/odom_path", 10);
-            landmark_sub = n.subscribe("/real_sensor", 10, &EKFSlam::landmark_callback, this);
+            lidar_sub = n.subscribe("/scan", 10, &EKFSlam::scan_callback, this);
             joint_sub = n.subscribe("/joint_states", 10, &EKFSlam::joint_state_callback, this);
         }
 
@@ -111,9 +113,9 @@ class EKFSlam {
             return;
         }
 
-        void landmark_callback(const visualization_msgs::MarkerArray &msg) {
-            landmarks_received = true;
-
+        void scan_callback(const sensor_msgs::LaserScan &msg) {
+            scan_received = true;
+            scan_msg = msg;
             // implement data association (mahalanobis distance)
             return;
         }
@@ -121,7 +123,7 @@ class EKFSlam {
         void joint_state_callback(const sensor_msgs::JointState &msg) {
             joint_states_received = true;
             // update the configuration of the actual robot based on the joint state messages
-            actual_turtle(msg.position[0], msg.position[1]);
+            actual_robot(msg.position[0], msg.position[1]);
 
             joint_state_msg = msg;
 
@@ -172,36 +174,30 @@ class EKFSlam {
                 if (joint_states_received) {
 
                     // if landmarks have been received, implement data association
-                    if (landmarks_received) {
+                    if (scan_received) {
                         
                         // get the twist that corresponds to the updated joint states
                         Twist2D twist = slam_estimate.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
-                        
-                        // update the estimate using the model g
-                        colvec prev_state(3+2*total_landmarks);
-                        prev_state = extended_kalman_filter.getStateVec();
 
-                        colvec next_state(3+2*total_landmarks);
-                        next_state = extended_kalman_filter.g(prev_state, twist);
-
-                        extended_kalman_filter.updateStateVec(next_state);
+                        colvec estimate_state(3+2*total_landmarks);
+                        estimate_state = extended_kalman_filter.predictEstimate(twist);
 
                         // propagate uncertainty using the linearized state transition model
-                        mat Q_bar(3+2*total_landmarks, 3+2*total_landmarks);
-                        Q_bar = extended_kalman_filter.Q_bar();
+                        mat propagated_cov(3+2*total_landmarks, 3+2*total_landmarks);
+                        propagated_cov = extended_kalman_filter.propagateUncertainty(twist);
 
-                        mat A(3+2*total_landmarks, 3+2*total_landmarks);
-                        A = extended_kalman_filter.getA(prev_state, twist);
+                        // for each measurement i
+                        for (int i = 0; i < scan_msg.ranges.size(); i++) {
+                            // implement data association to associate meausrement i with landmark j
+                            colvec measurement(2);
+                            measurement(0) = scan_msg.ranges[i];
+                            measurement(1) = i;
 
-                        mat prev_cov(3+2*total_landmarks, 3+2*total_landmarks);
-                        prev_cov = extended_kalman_filter.getCov();
+                            int landmark_id = extended_kalman_filter.associateLandmark(measurement);
 
-                        mat next_cov(3+2*total_landmarks, 3+2*total_landmarks);
-                        next_cov = A*cov*A.t() + Q_bar;
 
-                        extended_kalman_filter.updateCov(next_cov);
-
-                        landmarks_received = false;
+                        }
+                        scan_received = false;
                     }
 
                     joint_states_received = false;
