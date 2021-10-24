@@ -13,11 +13,11 @@ namespace slam_library
     using namespace arma;
     using namespace rigid2d;
 
-    colvec xy_to_rangeBearing(double xRel, double yRel)
+    colvec cartesian2polar(double x, double y)
     {
         colvec rangeBearing(2);
-        rangeBearing(0) = sqrt(pow(xRel, 2) + (pow(yRel, 2)));
-        rangeBearing(1) = normalize_angle(atan2(yRel, xRel));
+        rangeBearing(0) = sqrt(pow(x, 2) + (pow(y, 2)));
+        rangeBearing(1) = normalize_angle(atan2(y, x));
         return rangeBearing;
     }
 
@@ -60,7 +60,13 @@ namespace slam_library
         return;
     }
 
-    colvec ExtendedKalman::predictEstimate(const Twist2D & tw)
+    void ExtendedKalman::predict(const Twist2D &tw) {
+        predictEstimate(tw);
+        propagateUncertainty(tw);
+        return;
+    }
+
+    void ExtendedKalman::predictEstimate(const Twist2D & tw)
     {
         double dq_th, dq_x, dq_y;
 
@@ -78,16 +84,22 @@ namespace slam_library
             dq_y = (tw.dx / tw.dth) * cos(theta) - (tw.dx / tw.dth) * cos(theta + tw.dth);
         }
 
-        colvec estimate_state(3+2*n);
-        estimate_state = state_vector;
-        estimate_state(0) += dq_th;
-        estimate_state(1) += dq_x; 
-        estimate_state(2) += dq_y;
+        // colvec estimate_state(3+2*n);
+        // estimate_state = state_vector;
+        // estimate_state(0) += dq_th;
+        // estimate_state(1) += dq_x; 
+        // estimate_state(2) += dq_y;
 
-        return estimate_state;
+        // state_vector = estimate_state;
+
+        state_vector(0) += dq_th;
+        state_vector(1) += dq_x;
+        state_vector(2) += dq_y;
+
+        return;
     }
 
-    mat ExtendedKalman::propagateUncertainty(const Twist2D &tw) {
+    void ExtendedKalman::propagateUncertainty(const Twist2D &tw) {
         mat Q_bar(len, len);
         Q_bar = expanded_process_noise();
 
@@ -97,7 +109,8 @@ namespace slam_library
         mat uncertainty(len, len);
         uncertainty = A * covariance * A.t() + Q_bar;
 
-        return uncertainty;
+        covariance = uncertainty;
+        return;
     }
 
     mat ExtendedKalman::expanded_process_noise(void)
@@ -175,7 +188,7 @@ namespace slam_library
         return H;
     }
 
-    int ExtendedKalman::associateLandmark(vec z_i)
+    int ExtendedKalman::associateLandmark(colvec z_i)
     {
         vec temp(3+2*(seen_landmarks+1));
 
@@ -221,10 +234,32 @@ namespace slam_library
             }
         }
 
-        // add the new landmark to the state vector
-        state_vector(3+2*seen_landmarks) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
-        state_vector(4+2*seen_landmarks) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
+        // // add the new landmark to the state vector
+        // state_vector(3+2*seen_landmarks) = state_vector(1) + z_i(0) * cos(z_i(1) + state_vector(0));
+        // state_vector(4+2*seen_landmarks) = state_vector(2) + z_i(0) * sin(z_i(1) + state_vector(0));
         return seen_landmarks++;
+    }
+
+    void ExtendedKalman::initializeLandmark(colvec z_i, int id) {
+        state_vector(3+2*id) = state_vector(1) + z_i(0)*cos(z_i(1) + state_vector(0));
+        state_vector(4+2*id) = state_vector(1) + z_i(0)*sin(z_i(1) + state_vector(0));
+        return;
+    }
+    
+    void ExtendedKalman::update(const Twist2D &tw, colvec z_id, int id) {
+        // compute theoretical measurement given state estimate
+        colvec z_hat = computeTheoreticalMeasurement(id, state_vector);
+
+        // compute Kalman gain from linearized measurement model
+        mat H_id = linearizedMeasurementModel(id, state_vector);
+        mat K_id = covariance * H_id.t() * (H_id * covariance * H_id.t() + sensor_noise).i();
+
+        // compute posterior state update
+        state_vector += K_id * (z_id - z_hat);
+
+        // compute posterior covariance update
+        covariance = (mat(3+2*n, 3+2*n,arma::fill::eye) - K_id * H_id) * covariance;
+        return;
     }
 
     // const colvec & ExtendedKalman::getstate_vector() const

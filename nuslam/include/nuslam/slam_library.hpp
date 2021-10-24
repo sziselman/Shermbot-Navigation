@@ -13,9 +13,9 @@ namespace slam_library
     using namespace rigid2d;
 
     /// \brief a function that calculates the range-bearing measurement given (x,y) values
-    /// \param xRel the x distance of the marker relative to the robot
-    /// \param yRel the y distance of the marker relative to the robot
-    colvec xy_to_rangeBearing(double xRel, double yRel);
+    /// \param x the x distance of the marker relative to the robot
+    /// \param y the y distance of the marker relative to the robot
+    colvec cartesian2polar(double x, double y);
 
     /// \brief a class that contains functions when utilizing Extended Kalman Filter
     /// At each time step t, the EKF takes odometry (u) and sensor measurements (z)
@@ -42,7 +42,16 @@ namespace slam_library
             /// \brief a function that calculates A matrix
             /// \param tw - the twist / controls
             /// \return - a (3+2n)x(3+2n) matrix representing g'
-            mat getA(const Twist2D & tw);
+            mat getA(const Twist2D &tw);
+
+            /// \brief g function that updates the estimate using the model
+            /// \param tw - the twist / controls
+            void predictEstimate(const Twist2D &tw);
+
+            /// \brief function that propagates the uncertainty
+            /// \param prev_state
+            /// \param tw
+            void propagateUncertainty(const Twist2D &tw);
 
         public:
             /// \brief constructor for object
@@ -55,31 +64,36 @@ namespace slam_library
             /// \param R - a 2x2 matrix representing sensor noise
             ExtendedKalman(colvec robotState, colvec mapState, mat Q, mat R);
 
-            /// \brief g function that updates the estimate using the model
-            /// \param tw - the twist / controls
-            /// \return - a (3+2n)x1 column vector representing the estimated state of the robot
-            colvec predictEstimate(const Twist2D & tw);
-
-            /// \brief function that propagates the uncertainty
-            /// \param prev_state
-            /// \param tw
-            mat propagateUncertainty(const Twist2D &tw);
+            /// \brief implements prediction step for EKF SLAM
+            /// \param tw - the twist
+            void predict(const Twist2D &tw);
 
             /// \brief gets the measurement for range and bearing to landmark j
             /// \param j - the landmark j
             /// \return h_j
             colvec computeTheoreticalMeasurement(int j, colvec state_vec);
 
-            /// \brief function used for data association
-            /// \param z_i : the range bearing measurement
-            /// \return an integer representing the marker id
-            int associateLandmark(vec z_i);
-
             /// \brief gets the matrix H_j
             /// \param j - the landmark j
             /// \param state_vec
             /// \return 2x(3+2n) matrix, the derivative of h_j wrt the state
             mat linearizedMeasurementModel(int j, colvec state_vec);
+
+            /// \brief associate a measurement to a landmark
+            /// \param z_i : the range bearing measurement
+            /// \return an integer representing the marker id
+            int associateLandmark(colvec z_i);
+
+            /// \brief initialize a landmark
+            /// \param z_i : the range bearing measurement
+            /// \param id : the id of the landmark
+            void initializeLandmark(colvec z_id, int id);
+
+            /// \brief implement udpdate step for EKF SLAM
+            /// \param tw : the twist
+            /// \param z_id : the measurement of landmark id
+            /// \param id : the id of the landmark
+            void update(const Twist2D &tw, colvec z_id, int id);
 
             // /// \brief returns the state vector
             // /// \return state_vector
