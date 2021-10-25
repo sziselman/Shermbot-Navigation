@@ -202,8 +202,8 @@ namespace slam_library
 
         // double min_threshold = 1e-12;
         // double max_threshold = 1e-9;
-        double min_threshold = 1;
-        double max_threshold = 100;
+        double min_threshold = 5;
+        double max_threshold = 600;
         
         // if no landmarks have been seen, initialize this new landmark
         if (seen_landmarks == 0) {
@@ -219,7 +219,7 @@ namespace slam_library
 
         for (int k = 1; k < seen_landmarks+1; k++)
         {
-            std::cout << "landmark " << k << std::endl;
+            // std::cout << "landmark " << k << "\r" << std::endl;
 
             // compute the linearized measurement model
             mat H_k = linearizedMeasurementModel(k, temp);
@@ -239,29 +239,30 @@ namespace slam_library
             }
             // calculate mahalanobis distance for all other landmarks
             else {
-                std::cout << "z_i: " << z_i(0) << ", " << z_i(1) << std::endl;
-                std::cout << "z_hat: " << z_hat(0) << ", " << z_hat(1) << std::endl;
+                // std::cout << "z_i: " << z_i(0) << ", " << z_i(1)  << "\r" << std::endl;
+                // std::cout << "z_hat: " << z_hat(0) << ", " << z_hat(1)  << "\r" << std::endl;
                 colvec dz = z_i - z_hat;
-                std::cout << "dz: " << dz(0) << ", " << dz(1) << std::endl;
+                // std::cout << "dz: " << dz(0) << ", " << dz(1)  << "\r" << std::endl;
 
                 mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
                 mahalanobis = d_k(0) * 1e12;
             }
   
-            std::cout << "mahalanobis distance is " << mahalanobis << std::endl;
+            std::cout << "mahalanobis distance from landmark " << k << " is " << mahalanobis  << "\r" << std::endl;
 
             // if mahalanobis distance is less than some threshold, return the current landmark
             if (mahalanobis < min_threshold) {
-                std::cout << "mahalanobis distance less than threshold, returning the current landmark" << std::endl;
+                std::cout << "mahalanobis distance less than threshold, returning the current landmark\r" << std::endl;
                 return k;
             }
             // if mahalanobis distance is within a "gray" area, return -1 to skip it
             else if ((mahalanobis > min_threshold) && (mahalanobis < max_threshold)) {
-                std::cout << "mahalanobis distance within gray area, ignore the measurement" << std::endl;
+                std::cout << "mahalanobis distance within gray area, ignore the measurement\r" << std::endl;
                 return -1; // skip the landmark
             }
         }
 
+        std::cout << "mahalanobis distance is outside threshold, initializing new landmark\r" << std::endl;
         // add the new landmark to the list of seen landmarks
         seen_landmarks++;
         return seen_landmarks;

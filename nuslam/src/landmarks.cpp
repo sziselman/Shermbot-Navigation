@@ -37,7 +37,7 @@ class Landmarks {
         double min_range, max_range;
         double tube_rad;
         std::string turtle_frame_id;
-        int frequency = 50;
+        int frequency = 10;
 
     public:
         Landmarks() {
@@ -78,13 +78,13 @@ class Landmarks {
 
                     marker_array.markers.clear();
 
-                    std::cout << "new marker array\r" << std::endl;
+                    // std::cout << "new marker array\r" << std::endl;
 
                     // check to see if each cluster is a circle
                     for (auto cluster : clusters) {
 
                         if (classifyCluster(cluster)) {
-                            std::cout << "cluster is a circle!!\r" << std::endl;
+                            // std::cout << "cluster is a circle!!\r" << std::endl;
 
                             visualization_msgs::Marker marker = circleFit(cluster);
 
@@ -96,7 +96,7 @@ class Landmarks {
                                 continue;
                             }
 
-                            std::cout << "(x: " << marker.pose.position.x << ", y: " << marker.pose.position.y << ")\r" << std::endl;
+                            // std::cout << "(x: " << marker.pose.position.x << ", y: " << marker.pose.position.y << ")\r" << std::endl;
                             marker.header.stamp = ros::Time::now();
                             marker.header.frame_id = turtle_frame_id;
                             marker.scale.x = 2*tube_rad;

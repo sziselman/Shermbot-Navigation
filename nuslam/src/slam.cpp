@@ -245,8 +245,6 @@ class EKFSlam {
 
             while (ros::ok()) {
 
-                std::cout << "new loop +==============================================" << std::endl;
-
                 broadcast_odom2body_tf();
                 broadcast_map2odom_tf();
 
@@ -254,6 +252,15 @@ class EKFSlam {
                 if (joint_states_received) {
                     // if landmarks have been received, implement data association
                     if (landmarks_received) {
+                        std::cout << "landmarks received!! +++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
+
+                        std::cout << seen_landmarks << " landmarks have been seen at positions:\r" << std::endl;
+
+                        if (seen_landmarks > 0) {
+                            for (int i = 1; i <= seen_landmarks; i++) {
+                                std::cout << "landmark " << i << " at (" << state_estimation(1+2*i) << ", " << state_estimation(2+2*i) << ")\r" << std::endl;
+                            }
+                        }
                         // get the twist that corresponds to the updated joint states
                         twist = odom_model.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
                         // update the configuration of the odom model
@@ -274,19 +281,10 @@ class EKFSlam {
 
                             colvec z_i = cartesian2polar(x, y);
 
-                            if (landmarks.markers.size() > 1) {
-                                std::cout << "num of measurements: " << landmarks.markers.size() << std::endl;
-                                std::cout << "landmark x: " << x << " y: " << y << std::endl;
-                                std::cout << "landmark dist: " << z_i(0) << " angle: " << z_i(1) << std::endl;
-                                std::cout << "seen landmarks: " << seen_landmarks << std::endl;
-                            }
+                            std::cout << "landmark measured distance: " << z_i(0) << " at angle " << z_i(1) << "\r" << std::endl;
 
                             // get the associated landmark id
                             int landmark_id = extended_kalman_filter.associateLandmark(z_i);
-
-                            if (landmarks.markers.size() > 1) {
-                                std::cout << "associated landmark id: " << landmark_id << std::endl;
-                            }
 
                             // if the landmark is out of range, ignore it
                             if (landmark_id < 0) {
@@ -309,9 +307,19 @@ class EKFSlam {
                             marker.header.frame_id = map_frame_id;
                             marker.header.stamp = ros::Time::now();
                             marker.ns = "estimate";
+                            marker.id = i+1;
+                            marker.type = visualization_msgs::Marker::CYLINDER;
+                            marker.action = visualization_msgs::Marker::ADD;
+
                             marker.pose.position.x = state_estimation(3+2*i);
                             marker.pose.position.y = state_estimation(4+2*i);
                             marker.pose.position.z = 0.125;
+
+                            tf2::Quaternion marker_quat;
+                            marker_quat.setRPY(0.0, 0.0, 0.0);
+                            geometry_msgs::Quaternion quat = tf2::toMsg(marker_quat);
+
+                            marker.pose.orientation = quat;
                             marker.scale.x = 2*tube_rad;
                             marker.scale.y = 2*tube_rad;
                             marker.scale.z = 0.25;

@@ -7,14 +7,12 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
+        - /LaserScan1
         - /TF1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Path1
         - /MarkerArray1/Namespaces1
-        - /Marker1/Status1
-        - /MarkerArray3
-        - /MarkerArray3/Status1
         - /MarkerArray3/Namespaces1
         - /Path2
       Splitter Ratio: 0.6029411554336548
@@ -177,13 +175,13 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /fake_sensor
       Name: MarkerArray
       Namespaces:
-        relative: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /wall
@@ -193,13 +191,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /real_sensor
       Name: MarkerArray
       Namespaces:
-        real: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -223,6 +221,14 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /odom_path
       Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /estimated_landmarks
+      Name: MarkerArray
+      Namespaces:
+        estimate: true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -252,7 +258,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.0820987224578857
+      Distance: 3.2835748195648193
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -268,9 +274,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.49039798974990845
+      Pitch: 0.5453976988792419
       Target Frame: <Fixed Frame>
-      Yaw: 4.713604927062988
+      Yaw: 4.71359920501709
     Saved: ~
 Window Geometry:
   Displays:
