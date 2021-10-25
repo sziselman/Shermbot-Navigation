@@ -64,7 +64,7 @@ class EKFSlam {
         double min_range, max_range;
 
         // variables
-        int frequency = 5;
+        int frequency = 10;
         bool landmarks_received = false;
         bool joint_states_received = false;
         int seen_landmarks;
@@ -249,9 +249,12 @@ class EKFSlam {
 
                 state_estimation = extended_kalman_filter.getStateVector();
                 seen_landmarks = extended_kalman_filter.getSeenLandmarks();
+
                 std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
                 std::cout << "There have been " << seen_landmarks << " seen landmarks\r" << std::endl;
                 std::cout << "state estimation\r" << std::endl;
+                std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
+
                 for (auto s : state_estimation) {
                     std::cout << s << "\r" << std::endl;
                 }
@@ -266,7 +269,12 @@ class EKFSlam {
                     extended_kalman_filter.predict(twist);
 
                     if (landmarks_received) {
+
+                        std::cout << landmarks.markers.size() << " measurements have been seen\r" << std::endl;
                         
+                        for (int i = 0; i < landmarks.markers.size(); i++) {
+                            std::cout << "measurement " << i << " at (" << landmarks.markers[i].pose.position.x << ", " << landmarks.markers[i].pose.position.y << ")\r" << std::endl; 
+                        }
                         // loop through each landmark
                         for (auto landmark : landmarks.markers) {
 
@@ -292,6 +300,17 @@ class EKFSlam {
                             }
                             else if (id > total_landmarks) {
                                 std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                std::cout << "max landmarks initialized\r" << std::endl;
                                 break;
                                 continue;
                             }
@@ -299,40 +318,40 @@ class EKFSlam {
                             extended_kalman_filter.update(twist, z_i, id);
                         }
 
-                        state_estimation = extended_kalman_filter.getStateVector();
+                    //     state_estimation = extended_kalman_filter.getStateVector();
 
-                        visualization_msgs::MarkerArray estimated_landmarks;
+                    //     visualization_msgs::MarkerArray estimated_landmarks;
 
-                        for (int i = 1; i <= seen_landmarks; i++) {
-                            visualization_msgs::Marker m;
-                            m.header.frame_id = map_frame_id;
-                            m.header.stamp = ros::Time::now();
-                            m.ns = "estimate";
-                            m.id = i;
-                            m.type = visualization_msgs::Marker::CYLINDER;
-                            m.action = visualization_msgs::Marker::ADD;
-                            m.pose.position.x = state_estimation(3+2*(i-1));
-                            m.pose.position.y = state_estimation(4+2*(i-1));
-                            m.pose.position.z = 0.125;
+                    //     for (int i = 1; i <= seen_landmarks; i++) {
+                    //         visualization_msgs::Marker m;
+                    //         m.header.frame_id = map_frame_id;
+                    //         m.header.stamp = ros::Time::now();
+                    //         m.ns = "estimate";
+                    //         m.id = i;
+                    //         m.type = visualization_msgs::Marker::CYLINDER;
+                    //         m.action = visualization_msgs::Marker::ADD;
+                    //         m.pose.position.x = state_estimation(3+2*(i-1));
+                    //         m.pose.position.y = state_estimation(4+2*(i-1));
+                    //         m.pose.position.z = 0.125;
 
-                            tf2::Quaternion m_quat;
-                            m_quat.setRPY(0.0, 0.0, 0.0);
-                            geometry_msgs::Quaternion quat = tf2::toMsg(m_quat);
+                    //         tf2::Quaternion m_quat;
+                    //         m_quat.setRPY(0.0, 0.0, 0.0);
+                    //         geometry_msgs::Quaternion quat = tf2::toMsg(m_quat);
 
-                            m.pose.orientation = quat;
-                            m.scale.x = 2*tube_rad;
-                            m.scale.y = 2*tube_rad;
-                            m.scale.z = 0.25;
-                            m.color.a = 1.0;
-                            m.color.r = 38./255.;
-                            m.color.g = 91./255.;
-                            m.color.b = 95./255.;
-                            m.frame_locked = true;
+                    //         m.pose.orientation = quat;
+                    //         m.scale.x = 2*tube_rad;
+                    //         m.scale.y = 2*tube_rad;
+                    //         m.scale.z = 0.25;
+                    //         m.color.a = 1.0;
+                    //         m.color.r = 38./255.;
+                    //         m.color.g = 91./255.;
+                    //         m.color.b = 95./255.;
+                    //         m.frame_locked = true;
 
-                            estimated_landmarks.markers.push_back(m);
-                        }
+                    //         estimated_landmarks.markers.push_back(m);
+                    //     }
 
-                        slam_landmarks_pub.publish(estimated_landmarks);
+                    //     slam_landmarks_pub.publish(estimated_landmarks);
 
                         landmarks_received = false;
                     }
