@@ -4,9 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /LaserScan1
+        - /TF1
         - /TF1/Tree1
         - /MarkerArray1/Namespaces1
-        - /Marker1
+        - /MarkerArray2
       Splitter Ratio: 0.6029411554336548
     Tree Height: 999
   - Class: rviz/Selection
@@ -146,21 +148,21 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /ground_truth
       Name: MarkerArray
       Namespaces:
-        real: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /fake_sensor
       Name: MarkerArray
       Namespaces:
-        relative: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /wall
@@ -234,4 +236,4 @@ Window Geometry:
     collapsed: true
   Width: 2302
   X: 1493
-  Y: 321
+  Y: 247

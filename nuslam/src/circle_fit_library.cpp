@@ -3,6 +3,9 @@
 
 #include "rigid2d/rigid2d.hpp"
 #include "nuslam/circle_fit_library.hpp"
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <cmath>
 
 namespace circle_fit
@@ -14,33 +17,35 @@ namespace circle_fit
         // compute the (x,y) coordinates of the centroid
 
         double x_hat = 0, y_hat = 0;
-        int n = data.size();
 
         for (auto point : data)
         {
-            x_hat += point.x / n;
-            y_hat += point.y / n;
+            x_hat += point.x / data.size();
+            y_hat += point.y / data.size();
         }
         
         // shift centroid so that the center is at the origin
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < data.size(); i++)
         {
-            data[i].x -= x_hat;
-            data[i].y -= y_hat;
+            data[i].x = data[i].x - x_hat;
+            data[i].y = data[i].y - y_hat;
         }
 
         // form the data matrix from the n data points
-        mat Z(n, 4, fill::ones);
-        for (int j = 0; j < n; j++)
+        double z_bar = 0;
+
+        mat Z(data.size(), 4, fill::ones);
+        for (int j = 0; j < data.size(); j++)
         {
-            Z(j, 0) = pow(data[j].x, 2) + pow(data[j].y, 2);
-            Z(j, 1) = data[j].x;
-            Z(j, 2) = data[j].y;
+            geometry_msgs::Point p = data[j];
+            double z = pow(p.x, 2) + pow(p.y, 2);
+            z_bar += z/data.size();
+
+            Z(j, 0) = z;
+            Z(j, 1) = p.x;
+            Z(j, 2) = p.y;
         }
-
-        // compute the mean of z
-        double z_bar = sum(Z.col(0)) / n;
-
+        
         // form the constraint matrix for the "Hyperaccute algebraic fit"
         mat H(4, 4, fill::eye);
         H(0, 0) = 2 * z_bar;
@@ -50,7 +55,7 @@ namespace circle_fit
 
         // compute H^-1
         mat Hinv(4, 4, fill::eye);
-        Hinv(0, 0) = 0;
+        Hinv(0, 0) = 0.0;
         Hinv(0, 3) = 0.5;
         Hinv(3, 0) = 0.5;
         Hinv(3, 3) = -2 * z_bar;
@@ -64,21 +69,22 @@ namespace circle_fit
         // solve for A based on sigma_4
         vec A;
 
-        if (s.size() < 4)
-        {
+        if (s.size() < 4) {
             visualization_msgs::Marker marker;
             marker.id = -1;
             return marker;
         }
-        if (s(3) < 1e-12)
-        {
+
+        if (s(3) < 1e-12) {
             A = V.col(3);
-        } else
-        {
+        } 
+        else {
             mat Y = V * diagmat(s) * V.t();
             mat Q = Y * Hinv * Y;
+            
             vec eigval;
             mat eigvec;
+
             eig_sym(eigval, eigvec, Q);
 
             // find the eigenvector corresponding to the smallest positive eigenvalue of Q
@@ -101,22 +107,27 @@ namespace circle_fit
         double a = -A(1) / (2*A(0));
         double b = -A(2) / (2*A(0));
         double R2 = (pow(A(1),2) + pow(A(2), 2) - 4*A(0)*A(3)) / (4*pow(A(0),2));
+        double tube_radius = sqrt(R2);
+
+        tf2::Quaternion marker_quat;
+        marker_quat.setRPY(0.0, 0.0, 0.0);
+        geometry_msgs::Quaternion quat = tf2::toMsg(marker_quat);
 
         // // create the marker to return
         visualization_msgs::Marker marker;
-        marker.header.frame_id = "turtle";
         marker.ns = "real";
         marker.type = visualization_msgs::Marker::CYLINDER;
         marker.pose.position.x = a + x_hat;
         marker.pose.position.y = b + y_hat;
-        marker.pose.position.z = 0.125;
-        marker.scale.x = sqrt(R2);
-        marker.scale.y = sqrt(R2);
-        marker.scale.z = 0.25;
+        marker.pose.position.z = 0.25;
+        marker.pose.orientation = quat;
+        marker.scale.x = 2*tube_radius;
+        marker.scale.y = 2*tube_radius;
+        marker.scale.z = 0.5;
         marker.color.a = 1.0;
-        marker.color.r = 1.0;
-        marker.color.g = 1.0;
-        marker.color.b = 1.0;
+        marker.color.r = 199. / 255.;
+        marker.color.g = 234. / 255.;
+        marker.color.b = 70. / 255.;
         marker.frame_locked = true;
 
         return marker;
@@ -196,23 +207,21 @@ namespace circle_fit
 
     bool classifyCluster(std::vector<geometry_msgs::Point> cluster)
     {
-        geometry_msgs::Point point1, point2, p2, p3;
-        point1 = cluster[0];
-        point2 = cluster.back();
+        geometry_msgs::Point p1, p2, p3;
+        p2 = cluster[0];
+        p3 = cluster[cluster.size()-1];
 
         std::vector<double> angles;
 
         for (int i = 1; i < cluster.size() - 1; i++)
         {
             // calculate the angle from p1 to p to p2
-            geometry_msgs::Point p = cluster[i];
-            // geometry_msgs::Point p1 = cluster[i];
+            p1 = cluster[i];
+            
+            double num = p2.y*(p1.x-p3.x) + p1.y*(p3.x-p2.x) + p3.y*(p2.x-p1.x);
+            double den = (p2.x-p1.x)*(p1.x-p3.x) + (p2.y-p1.y)*(p1.y-p3.y);
 
-            double a = sqrt(pow(p.x - point1.x, 2) + pow(p.y - point1.y, 2));
-            double b = sqrt(pow(p.x - point2.x, 2) + pow(p.y - point2.y, 2));
-            double c = sqrt(pow(point1.x - point2.x, 2) + pow(point1.y - point2.y, 2));
-
-            double angle = acos((pow(a, 2) + pow(b, 2) - pow(c, 2)) / (2 * a * b));
+            double angle = rigid2d::rad2deg(atan2(num, den));
 
             angles.push_back(angle);
         }
@@ -220,19 +229,18 @@ namespace circle_fit
         double mean = 0;
         for (double angle : angles)
         {
-            mean += angle;
+            mean += angle / angles.size();
         }
-        mean /= angles.size();
 
-        double sum = 0;
-        for (double a : angles)
+        double std_dev = 0;
+        for (double angle : angles)
         {
-            sum += pow(a - mean, 2);
+            std_dev += pow(angle-mean, 2);
         }
 
-        double stdev = sqrt(sum / (cluster.size() - 1));
+        std_dev = sqrt(std_dev/angles.size());
 
-        if (stdev < 10)
+        if (std_dev < 10)
         {
             return true;
         } else 

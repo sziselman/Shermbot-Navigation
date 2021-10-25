@@ -20,6 +20,7 @@
 
 #include <armadillo>
 #include <vector>
+#include <string>
 
 class Landmarks {
     private:
@@ -30,10 +31,12 @@ class Landmarks {
         // ros::Timer timer;
         bool scan_received = false;
         std::vector<std::vector<geometry_msgs::Point>> clusters;
+        visualization_msgs::MarkerArray marker_array;
 
         // variables from parameter server
         double min_range, max_range;
         double tube_rad;
+        std::string turtle_frame_id;
         int frequency = 50;
 
     public:
@@ -49,6 +52,7 @@ class Landmarks {
             n.getParam("minimum_range", min_range);
             n.getParam("maximum_range", max_range);
             n.getParam("tube_radius", tube_rad);
+            n.getParam("turtle_frame_id", turtle_frame_id);
 
             return;
         }
@@ -69,24 +73,34 @@ class Landmarks {
             while (ros::ok()) {
                 
                 if (scan_received) {
+                    
                     int id = 0;
 
-                    visualization_msgs::MarkerArray marker_array;
-                    
+                    marker_array.markers.clear();
+
+                    std::cout << "new marker array\r" << std::endl;
+
                     // check to see if each cluster is a circle
                     for (auto cluster : clusters) {
 
                         if (classifyCluster(cluster)) {
+                            std::cout << "cluster is a circle!!\r" << std::endl;
+
                             visualization_msgs::Marker marker = circleFit(cluster);
 
                             if (marker.id < 0) {
                                 continue;
                             }
 
-                            if (fabs(marker.scale.x - (2*tube_rad)) > 0.1) {
+                            if (marker.scale.x/2 > 1) {
                                 continue;
                             }
 
+                            std::cout << "(x: " << marker.pose.position.x << ", y: " << marker.pose.position.y << ")\r" << std::endl;
+                            marker.header.stamp = ros::Time::now();
+                            marker.header.frame_id = turtle_frame_id;
+                            marker.scale.x = 2*tube_rad;
+                            marker.scale.y = 2*tube_rad;
                             marker.id = id; 
                             id++;
 
