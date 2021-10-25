@@ -86,14 +86,6 @@ namespace slam_library
             dq_y = (tw.dx / tw.dth) * cos(theta) - (tw.dx / tw.dth) * cos(theta + tw.dth);
         }
 
-        // colvec estimate_state(3+2*n);
-        // estimate_state = state_vector;
-        // estimate_state(0) += dq_th;
-        // estimate_state(1) += dq_x; 
-        // estimate_state(2) += dq_y;
-
-        // state_vector = estimate_state;
-
         state_vector(0) += dq_th;
         state_vector(1) += dq_x;
         state_vector(2) += dq_y;
@@ -158,8 +150,8 @@ namespace slam_library
     colvec ExtendedKalman::computeTheoreticalMeasurement(int j, colvec state_vec)
     {
         colvec h_j(2);
-        double m_xj = state_vec(1+2*j);
-        double m_yj = state_vec(2+2*j);
+        double m_xj = state_vec(3+2*(j-1));
+        double m_yj = state_vec(4+2*(j-1));
         // std::cout << "m_x,j: " << m_xj << ", m_y,j: " << m_yj << std::endl;
         double th = state_vec(0);
         double x = state_vec(1);
@@ -176,10 +168,13 @@ namespace slam_library
         mat H(2, len, fill::zeros);
 
         double dx = state_vec(3+2*(j-1)) - state_vec(1);
+        // std::cout << "dx: " << dx << "\r" << std::endl;
 
         double dy = state_vec(4+2*(j-1)) - state_vec(2);
+        // std::cout << "dy: " << dy << "\r" << std::endl;
 
         double d = pow(dx, 2) + pow(dy, 2);
+        // std::cout << "d: " << d << "\r" << std::endl;
 
         H(1, 0) = -1;
         H(0, 1) = -dx / sqrt(d);
@@ -190,6 +185,7 @@ namespace slam_library
         H(1, 3+2*(j-1)) = -dy / d;
         H(0, 4+2*(j-1)) = dy / sqrt(d);
         H(1, 4+2*(j-1)) = dx / d;
+
         return H;
     }
 
@@ -202,8 +198,8 @@ namespace slam_library
 
         // double min_threshold = 1e-12;
         // double max_threshold = 1e-9;
-        double min_threshold = 5;
-        double max_threshold = 600;
+        double min_threshold = 0.01;
+        double max_threshold = 200;
         
         // if no landmarks have been seen, initialize this new landmark
         if (seen_landmarks == 0) {
@@ -245,7 +241,7 @@ namespace slam_library
                 // std::cout << "dz: " << dz(0) << ", " << dz(1)  << "\r" << std::endl;
 
                 mat d_k = (z_i - z_hat).t() * psi_k.i() * (z_i - z_hat);
-                mahalanobis = d_k(0) * 1e12;
+                mahalanobis = d_k(0);
             }
   
             std::cout << "mahalanobis distance from landmark " << k << " is " << mahalanobis  << "\r" << std::endl;
@@ -269,24 +265,49 @@ namespace slam_library
     }
 
     void ExtendedKalman::initializeLandmark(colvec z_i, int id) {
-        state_vector(1+2*id) = state_vector(1) + z_i(0)*cos(z_i(1) + state_vector(0));
-        state_vector(2+2*id) = state_vector(2) + z_i(0)*sin(z_i(1) + state_vector(0));
+        std::cout << "initializing landmark " << id << "\r" << std::endl;
+        state_vector(3+2*(id-1)) = state_vector(1) + z_i(0)*cos(z_i(1) + state_vector(0));
+        state_vector(4+2*(id-1)) = state_vector(2) + z_i(0)*sin(z_i(1) + state_vector(0));
+
+        for (int i = 0; i < len; i++) {
+            std::cout << state_vector(i) << "\r" << std::endl;
+        }
         return;
     }
     
     void ExtendedKalman::update(const Twist2D &tw, colvec z_id, int id) {
+        std::cout << "Update step +++++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
+
         // compute theoretical measurement given state estimate
         colvec z_hat = computeTheoreticalMeasurement(id, state_vector);
 
+        std::cout << "z_hat distance: " << z_hat(0) << ", angle: " << z_hat(1) << "\r" << std::endl; 
+
         // compute Kalman gain from linearized measurement model
         mat H_id = linearizedMeasurementModel(id, state_vector);
+
+        for (auto h : H_id) {
+            std::cout << "H element:" << h << "\r" << std::endl;
+        }
+
         mat K_id = covariance * H_id.t() * (H_id * covariance * H_id.t() + sensor_noise).i();
 
+        for (auto k : K_id) {
+            std::cout << "K element: " << k << "\r" << std::endl;
+        }
         // compute posterior state update
         state_vector += K_id * (z_id - z_hat);
 
+        for (auto s : state_vector) {
+            std::cout << "state vector element: " << s << "\r" << std::endl;
+        }
+
         // compute posterior covariance update
         covariance = (mat(3+2*n, 3+2*n,arma::fill::eye) - K_id * H_id) * covariance;
+
+        for (auto c : covariance) {
+            std::cout << "covariance element: " << c << "\r" << std::endl;
+        }
         return;
     }
 

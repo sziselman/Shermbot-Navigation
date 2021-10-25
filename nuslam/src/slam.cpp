@@ -64,7 +64,7 @@ class EKFSlam {
         double min_range, max_range;
 
         // variables
-        int frequency = 10;
+        int frequency = 5;
         bool landmarks_received = false;
         bool joint_states_received = false;
         int seen_landmarks;
@@ -244,104 +244,101 @@ class EKFSlam {
                                                                    0.0);
 
             while (ros::ok()) {
-
                 broadcast_odom2body_tf();
                 broadcast_map2odom_tf();
 
-                // if joint states have been received, the configuration of the actual turtle gets updated
+                state_estimation = extended_kalman_filter.getStateVector();
+                seen_landmarks = extended_kalman_filter.getSeenLandmarks();
+                std::cout << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
+                std::cout << "There have been " << seen_landmarks << " seen landmarks\r" << std::endl;
+                std::cout << "state estimation\r" << std::endl;
+                for (auto s : state_estimation) {
+                    std::cout << s << "\r" << std::endl;
+                }
+
                 if (joint_states_received) {
-                    // if landmarks have been received, implement data association
+                    // get twist command
+                    twist = odom_model.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
+                    odom_model(joint_state_msg.position[0], joint_state_msg.position[1]);
+                    draw_odom_path();
+
+                    // prediction step
+                    extended_kalman_filter.predict(twist);
+
                     if (landmarks_received) {
-                        std::cout << "landmarks received!! +++++++++++++++++++++++++++++++++++++++++++++++\r" << std::endl;
-
-                        std::cout << seen_landmarks << " landmarks have been seen at positions:\r" << std::endl;
-
-                        if (seen_landmarks > 0) {
-                            for (int i = 1; i <= seen_landmarks; i++) {
-                                std::cout << "landmark " << i << " at (" << state_estimation(1+2*i) << ", " << state_estimation(2+2*i) << ")\r" << std::endl;
-                            }
-                        }
-                        // get the twist that corresponds to the updated joint states
-                        twist = odom_model.getTwist(joint_state_msg.position[0], joint_state_msg.position[1]);
-                        // update the configuration of the odom model
-                        odom_model(joint_state_msg.position[0], joint_state_msg.position[1]);
-
-                        // publish odom message, publish odom path
-                        draw_odom_path();
-
-                        // make prediction based on the commanded twist
-                        extended_kalman_filter.predict(twist);
-
-                        // for each measurement i
+                        
+                        // loop through each landmark
                         for (auto landmark : landmarks.markers) {
-                            // calculate z_i from landmark
-                            colvec measurement(2);
+
+                            // get cartesian distances between the landmark and turtle
                             double x = landmark.pose.position.x;
                             double y = landmark.pose.position.y;
 
+                            // calculate z_i
                             colvec z_i = cartesian2polar(x, y);
 
-                            std::cout << "landmark measured distance: " << z_i(0) << " at angle " << z_i(1) << "\r" << std::endl;
+                            std::cout << "z_i dist: " << z_i(0) << " angle: " << z_i(1) << "\r" << std::endl;
 
-                            // get the associated landmark id
-                            int landmark_id = extended_kalman_filter.associateLandmark(z_i);
+                            // perform data association
+                            int id = extended_kalman_filter.associateLandmark(z_i);
 
-                            // if the landmark is out of range, ignore it
-                            if (landmark_id < 0) {
+                            std::cout << "measurement associated with landmark id " << id << "\r" << std::endl;
+
+                            if (id > seen_landmarks) {
+                                extended_kalman_filter.initializeLandmark(z_i, id);
+                            }
+                            else if (id < 0) {
                                 continue;
                             }
-                            // if a landmark is greater than the number of seen landmarks (new landmark) initialize it
-                            else if (landmark_id > seen_landmarks) {
-                                extended_kalman_filter.initializeLandmark(z_i, landmark_id);
-                                seen_landmarks = extended_kalman_filter.getSeenLandmarks();
+                            else if (id > total_landmarks) {
+                                std::cout << "max landmarks initialized\r" << std::endl;
+                                break;
+                                continue;
                             }
+
+                            extended_kalman_filter.update(twist, z_i, id);
                         }
 
                         state_estimation = extended_kalman_filter.getStateVector();
 
                         visualization_msgs::MarkerArray estimated_landmarks;
 
-                        // publish the estimated landmarks
-                        for (int i = 0; i < seen_landmarks; i++) {
-                            visualization_msgs::Marker marker;
-                            marker.header.frame_id = map_frame_id;
-                            marker.header.stamp = ros::Time::now();
-                            marker.ns = "estimate";
-                            marker.id = i+1;
-                            marker.type = visualization_msgs::Marker::CYLINDER;
-                            marker.action = visualization_msgs::Marker::ADD;
+                        for (int i = 1; i <= seen_landmarks; i++) {
+                            visualization_msgs::Marker m;
+                            m.header.frame_id = map_frame_id;
+                            m.header.stamp = ros::Time::now();
+                            m.ns = "estimate";
+                            m.id = i;
+                            m.type = visualization_msgs::Marker::CYLINDER;
+                            m.action = visualization_msgs::Marker::ADD;
+                            m.pose.position.x = state_estimation(3+2*(i-1));
+                            m.pose.position.y = state_estimation(4+2*(i-1));
+                            m.pose.position.z = 0.125;
 
-                            marker.pose.position.x = state_estimation(3+2*i);
-                            marker.pose.position.y = state_estimation(4+2*i);
-                            marker.pose.position.z = 0.125;
+                            tf2::Quaternion m_quat;
+                            m_quat.setRPY(0.0, 0.0, 0.0);
+                            geometry_msgs::Quaternion quat = tf2::toMsg(m_quat);
 
-                            tf2::Quaternion marker_quat;
-                            marker_quat.setRPY(0.0, 0.0, 0.0);
-                            geometry_msgs::Quaternion quat = tf2::toMsg(marker_quat);
+                            m.pose.orientation = quat;
+                            m.scale.x = 2*tube_rad;
+                            m.scale.y = 2*tube_rad;
+                            m.scale.z = 0.25;
+                            m.color.a = 1.0;
+                            m.color.r = 38./255.;
+                            m.color.g = 91./255.;
+                            m.color.b = 95./255.;
+                            m.frame_locked = true;
 
-                            marker.pose.orientation = quat;
-                            marker.scale.x = 2*tube_rad;
-                            marker.scale.y = 2*tube_rad;
-                            marker.scale.z = 0.25;
-                            marker.color.a = 1.0;
-                            marker.color.r = 38. / 255.;
-                            marker.color.g = 91. / 255.;
-                            marker.color.b = 95. / 255.;
-                            marker.frame_locked = true;
-
-                            estimated_landmarks.markers.push_back(marker);
+                            estimated_landmarks.markers.push_back(m);
                         }
 
                         slam_landmarks_pub.publish(estimated_landmarks);
-
-                        // publish the slam path
 
                         landmarks_received = false;
                     }
 
                     joint_states_received = false;
                 }
-                
 
                 ros::spinOnce();
                 loop_rate.sleep();
